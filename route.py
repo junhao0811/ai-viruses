@@ -132,22 +132,22 @@ class Route:
         """Follow a path and add computers according to a virus_type.
 
         Args:
-            virus_type (VirusType): _description_
-
-        Raises:
-            NotImplementedError: _description_
+            virus_type (VirusType): The virus type to follow the path with.
         """
-        # Without using recursion
-        raise NotImplementedError()
+        # Without using recursion, implement the Route method follow_path,
+        # which takes in an argument virus of type VirusType, and on your route,
+        # calls virus.add_computer for every computer on your route this virus would pass by.
+        while self.store is not None:
+            
+        
 
     def add_all_computers(self) -> list[Computer]:
         """Returns a list of all computers on the route.
 
-        Raises:
-            NotImplementedError: _description_
-
         Returns:
-            list[Computer]: _description_
+            list[Computer]: A list of Computers that are within this route.
+
+        Complexity: O(n) where n is the total number of computers and branches combuined.
         """
         # With recursion
         raise NotImplementedError()
