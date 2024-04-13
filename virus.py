@@ -115,7 +115,18 @@ class RiskAverseVirus(VirusType):
         Returns:
             BranchDecision: A BranchDecision enum value
         """
-        raise NotImplementedError()
+        # IF both branches are RouteSeries THEN
+            # IF it sees any computer with a risk factor of 0.0, it should take that path
+            # IF there are multiple computers with a risk_factor of 0.0, it should take the path with the lowest hacking difficulty
+                # IF there is still a tie, continue to the next comparisons
+            # Take the highest value between the hacking_difficulty and the half of the hacked_value
+            # Then, divide this by the risk factor
+            # Compare the two paths and take the path with the higher value
+            # IF there is a tie, take the path with the lowest risk factor'
+            # IF there is still a tie, then STOP
+            
+        # IF only one has a RouteSeries and the other is a RouteSplit, pick the RouteSplit
+        # In all other cases default to the Top path
 
 
 class FancyVirus(VirusType):
@@ -131,4 +142,13 @@ class FancyVirus(VirusType):
         Returns:
             BranchDecision: A BranchDecision enum value
         """
-        raise NotImplementedError()
+        # Calculate a threshold by evaluating self.CALC_STR using reverse polish notation
+        # (e.g. - "7 3 + 8 - 2 * 2 /" this string should result in the value 2)
+
+        # IF both top and bottom have computers THEN
+            # IF top hacked_value < threshold, take top
+            # IF bot hacked_value < threshold, take bottom
+            # IF neither, THEN STOP
+        
+        # IF only one has a RouteSeries and the other a RouteSplit, pick the RouteSplit
+        # In all other cases default to the Top path
