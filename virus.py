@@ -14,6 +14,8 @@ class VirusType(ABC):
     def __init__(self) -> None:
         """
         Initializes the VirusType object with an empty list of computers that the virus has been transmitted through.
+
+        Complexity: O(1) for best/worst case scenarios.
         """
         self.computers = []
 
@@ -22,6 +24,8 @@ class VirusType(ABC):
 
         Args:
             computer (Computer): The computer that the virus has just been transmitted through
+
+        Complexity: O(1) for best/worst case scenarios.
         """
         self.computers.append(computer)
 
@@ -35,6 +39,8 @@ class VirusType(ABC):
 
         Returns:
             BranchDecision: A BranchDecision enum value
+
+        Complexity: O(1) for best/worst case scenarios.
         """
         pass
 
@@ -50,6 +56,8 @@ class TopVirus(VirusType):
 
         Returns:
             BranchDecision: A BranchDecision enum value
+
+        Complexity: O(1) for best/worst case scenarios.
         """
         # Always select the top branch
         return BranchDecision.TOP
@@ -66,6 +74,8 @@ class BottomVirus(VirusType):
 
         Returns:
             BranchDecision: A BranchDecision enum value
+
+        Complexity: O(1) for best/worst case scenarios.
         """
         # Always select the bottom branch
         return BranchDecision.BOTTOM
@@ -83,6 +93,8 @@ class LazyVirus(VirusType):
 
         Returns:
             BranchDecision: A BranchDecision enum value
+
+        Complexity: O(1) for best/worst case scenarios.
         """
         top_route = type(top_branch.store) == RouteSeries
         bot_route = type(bottom_branch.store) == RouteSeries
@@ -114,6 +126,8 @@ class RiskAverseVirus(VirusType):
 
         Returns:
             BranchDecision: A BranchDecision enum value
+
+        Complexity: O(1) for best/worst case scenarios.
         """
         top_route = type(top_branch.store) == RouteSeries
         bot_route = type(bottom_branch.store) == RouteSeries
@@ -175,6 +189,8 @@ class FancyVirus(VirusType):
 
         Returns:
             BranchDecision: A BranchDecision enum value
+
+        Complexity: O(n) for best/worst case scenarios where n is the number of items in self.CALC_STR.
         """
         # Calculate a threshold by evaluating self.CALC_STR using reverse polish notation
         # (e.g. - "7 3 + 8 - 2 * 2 /" this string should result in the value 2)
@@ -211,7 +227,7 @@ class FancyVirus(VirusType):
             # If bot hacked_value < threshold, take bottom
             elif bot_comp.hacked_value < threshold:
                 return BranchDecision.BOTTOM
-            # If neither, THEN STOP
+            # If neither, then stop
             return BranchDecision.STOP
         
         # If only one has a RouteSeries and the other a RouteSplit, pick the RouteSplit
