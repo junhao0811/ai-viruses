@@ -6,26 +6,66 @@ from branch_decision import BranchDecision
 
 
 class VirusType(ABC):
+    """
+    A VirusType is a type of virus that can be transmitted through a computer network.
+    """
 
     def __init__(self) -> None:
+        """
+        Initializes the VirusType object with an empty list of computers that the virus has been transmitted through.
+        """
         self.computers = []
 
     def add_computer(self, computer: Computer) -> None:
+        """Allows a virus to note that computer they've just being transmitted through by
+
+        Args:
+            computer (Computer): The computer that the virus has just been transmitted through
+        """
         self.computers.append(computer)
 
     @abstractmethod
     def select_branch(self, top_branch: Route, bottom_branch: Route) -> BranchDecision:
+        """Given two Routes as input, decides which of them they will take by returning the Enum BranchDecision.
+
+        Args:
+            top_branch (Route): The top branch of the route
+            bottom_branch (Route): The bottom branch of the route
+
+        Returns:
+            BranchDecision: A BranchDecision enum value
+        """
         raise NotImplementedError()
 
 
 class TopVirus(VirusType):
     def select_branch(self, top_branch: Route, bottom_branch: Route) -> BranchDecision:
+        """Given two Routes as input, decides which of them they will take by returning the Enum BranchDecision.
+        In this case, TopVirus always selects the top branch.
+
+        Args:
+            top_branch (Route): The top branch of the route
+            bottom_branch (Route): The bottom branch of the route
+
+        Returns:
+            BranchDecision: A BranchDecision enum value
+        """
         # Always select the top branch
         return BranchDecision.TOP
 
 
 class BottomVirus(VirusType):
     def select_branch(self, top_branch: Route, bottom_branch: Route) -> BranchDecision:
+        """Given two Routes as input, decides which of them they will take by returning the Enum BranchDecision.
+        In this case, BottomVirus always selects the bottom branch.
+
+        Args:
+            top_branch (Route): The top branch of the route
+            bottom_branch (Route): The bottom branch of the route
+
+        Returns:
+            BranchDecision: A BranchDecision enum value
+        """
         # Always select the bottom branch
         return BranchDecision.BOTTOM
 
@@ -35,6 +75,13 @@ class LazyVirus(VirusType):
         """
         Try looking into the first computer on each branch,
         take the path of the least difficulty.
+
+        Args:
+            top_branch (Route): The top branch of the route
+            bottom_branch (Route): The bottom branch of the route
+
+        Returns:
+            BranchDecision: A BranchDecision enum value
         """
         top_route = type(top_branch.store) == RouteSeries
         bot_route = type(bottom_branch.store) == RouteSeries
@@ -60,6 +107,13 @@ class RiskAverseVirus(VirusType):
     def select_branch(self, top_branch: Route, bottom_branch: Route) -> BranchDecision:
         """
         This virus is risk averse and likes to choose the path with the lowest risk factor.
+
+        Args:
+            top_branch (Route): The top branch of the route
+            bottom_branch (Route): The bottom branch of the route
+
+        Returns:
+            BranchDecision: A BranchDecision enum value
         """
         raise NotImplementedError()
 
@@ -68,7 +122,13 @@ class FancyVirus(VirusType):
     CALC_STR = "7 3 + 8 - 2 * 2 /"
 
     def select_branch(self, top_branch: Route, bottom_branch: Route) -> BranchDecision:
-        """
-        This virus has a fancy-pants and likes to overcomplicate its approach.
+        """This virus has a fancy-pants and likes to overcomplicate its approach.
+
+        Args:
+            top_branch (Route): The top branch of the route
+            bottom_branch (Route): The bottom branch of the route
+
+        Returns:
+            BranchDecision: A BranchDecision enum value
         """
         raise NotImplementedError()
