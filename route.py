@@ -137,7 +137,6 @@ class Route:
 
         Complexity: O(n) for best/worst case where n is the number of paths in the route.
         """
-        
         # Without using recursion
         next_route = LinkedStack()
         current = self.store
