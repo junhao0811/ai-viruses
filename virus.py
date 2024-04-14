@@ -46,6 +46,10 @@ class VirusType(ABC):
 
 
 class TopVirus(VirusType):
+    """
+    A virus that always chooses the top branch.
+    """
+    
     def select_branch(self, top_branch: Route, bottom_branch: Route) -> BranchDecision:
         """Given two Routes as input, decides which of them they will take by returning the Enum BranchDecision.
         In this case, TopVirus always selects the top branch.
@@ -64,6 +68,10 @@ class TopVirus(VirusType):
 
 
 class BottomVirus(VirusType):
+    """
+    A virus that always chooses the bottom branch.
+    """
+
     def select_branch(self, top_branch: Route, bottom_branch: Route) -> BranchDecision:
         """Given two Routes as input, decides which of them they will take by returning the Enum BranchDecision.
         In this case, BottomVirus always selects the bottom branch.
@@ -82,6 +90,10 @@ class BottomVirus(VirusType):
 
 
 class LazyVirus(VirusType):
+    """
+    A virus that is lazy and likes to choose the path of least difficulty.
+    """
+
     def select_branch(self, top_branch: Route, bottom_branch: Route) -> BranchDecision:
         """
         Try looking into the first computer on each branch,
@@ -116,6 +128,10 @@ class LazyVirus(VirusType):
 
 
 class RiskAverseVirus(VirusType):
+    """
+    A virus that is risk averse and likes to choose the path with the lowest risk factor.
+    """
+
     def select_branch(self, top_branch: Route, bottom_branch: Route) -> BranchDecision:
         """
         This virus is risk averse and likes to choose the path with the lowest risk factor.
@@ -178,6 +194,9 @@ class RiskAverseVirus(VirusType):
 
 
 class FancyVirus(VirusType):
+    """
+    A virus that uses a fancy approach to decide which branch to take.
+    """
     CALC_STR = "7 3 + 8 - 2 * 2 /"
 
     def select_branch(self, top_branch: Route, bottom_branch: Route) -> BranchDecision:
@@ -193,12 +212,11 @@ class FancyVirus(VirusType):
         Complexity: O(n) for best/worst case scenarios where n is the number of items in self.CALC_STR.
         """
         # Calculate a threshold by evaluating self.CALC_STR using reverse polish notation
-        # (e.g. - "7 3 + 8 - 2 * 2 /" this string should result in the value 2)
         stack = LinkedStack()
         for item in self.CALC_STR.split():
-            if type(item) == int:
-                stack.push(item)
-            else:
+            try:
+                stack.push(int(item))
+            except ValueError:
                 y = stack.pop()
                 x = stack.pop()
                 match item:
