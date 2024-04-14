@@ -2,8 +2,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from branch_decision import BranchDecision
 from computer import Computer
-
+from data_structures.linked_stack import LinkedStack
 from typing import TYPE_CHECKING, Union
+from virus import *
 
 # Avoid circular imports for typing.
 if TYPE_CHECKING:
@@ -134,35 +135,45 @@ class Route:
         Args:
             virus_type (VirusType): The virus type to follow the path with.
 
-        Complexity:
+        Complexity: O(n) for best/worst case where n is the number of paths in the route.
         """
-        # Start at the current route
-        current_route = self.store
+        
+        # Without using recursion
+        next_route = LinkedStack()
+        current = self.store
+        reaches_the_end = False
 
-        # While there are still routes to traverse
-        while current_route is not None:
-            # If the current route has a RouteSeries object, call add_computer
-            if isinstance(current_route, RouteSeries):
-                virus_type.add_computer(current_route.computer)
-                current_route = current_route.following.store
+        while not reaches_the_end:
+            if isinstance(current, RouteSplit):
+                decision = virus_type.select_branch(current.top, current.bottom)
 
-            # Otherwise if the virus encounters a RouteSplit object, query it to make a decision by calling select_branch for whichever virus_type
-            else:
-                decision = virus_type.select_branch(current_route.top, current_route.bottom)
-
-                # If the decision is TOP, set the current route to the top branch
+                next_route.push(current.following.store)
                 if decision == BranchDecision.TOP:
-                    current_route = current_route.top.store
-
-                # Else if the decision is BOTTOM, set the current route to the bottom branch
+                    current = current.top.store   # keep track the split node for the following
                 elif decision == BranchDecision.BOTTOM:
-                    current_route = current_route.bottom.store
+                    current = current.bottom.store
 
-                # Otherwise if the decision is STOP, set the current route to None to stop the loop
+                elif decision == BranchDecision.STOP:
+                    reaches_the_end = True
+
+            elif isinstance(current, RouteSeries):
+                virus_type.add_computer(current.computer)
+
+                if current is not None:
+                #if isinstance(current.following.store, RouteSeries) or isinstance(current.following.store, RouteSplit):
+                    current = current.following.store
                 else:
-                    current_route = None
+                    if not next_route.is_empty():
+                        current = next_route.pop()
+                    else:
+                        current = None
 
-        return
+            elif current is None:
+                # detect whether there is still next route
+                if not next_route.is_empty():
+                    current = next_route.pop()
+                else:
+                    reaches_the_end = True
 
     def add_all_computers(self) -> list[Computer]:
         """Returns a list of all computers on the route.
@@ -170,7 +181,7 @@ class Route:
         Returns:
             list[Computer]: A list of Computers that are within this route.
 
-        Complexity: O(n) where n is the total number of computers and branches combuined.
+        Complexity: O(n) for best/worst case where n is the total number of computers and branches combined.
         """
         current = self
         computers = []
@@ -194,3 +205,27 @@ class Route:
                 computers.extend(current.store.bottom.add_all_computers())
 
         return computers
+    
+if __name__ == "__main__":
+    top_top = Computer("top-top", 5, 3, 0.1)
+    top_bot = Computer("top-bot", 3, 5, 0.2)
+    top_mid = Computer("top-mid", 4, 7, 0.3)
+    bot_one = Computer("bot-one", 2, 5, 0.4)
+    bot_two = Computer("bot-two", 0, 0, 0.5)
+    final = Computer("final", 4, 4, 0.6)
+    route = Route(RouteSplit(
+        Route(RouteSplit(
+            Route(RouteSeries(top_top, Route(None))),
+            Route(RouteSeries(top_bot, Route(None))),
+            Route(RouteSeries(top_mid, Route(None))),
+        )),
+        Route(RouteSeries(bot_one, Route(RouteSplit(
+            Route(RouteSeries(bot_two, Route(None))),
+            Route(None),
+            Route(None),
+        )))),
+        Route(RouteSeries(final, Route(None)))
+    ))
+    fv = FancyVirus()
+    FancyVirus.CALC_STR = "7 3 + 8 - 2 *"
+    route.follow_path(fv)

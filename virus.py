@@ -193,12 +193,11 @@ class FancyVirus(VirusType):
         Complexity: O(n) for best/worst case scenarios where n is the number of items in self.CALC_STR.
         """
         # Calculate a threshold by evaluating self.CALC_STR using reverse polish notation
-        # (e.g. - "7 3 + 8 - 2 * 2 /" this string should result in the value 2)
         stack = LinkedStack()
         for item in self.CALC_STR.split():
-            if type(item) == int:
-                stack.push(item)
-            else:
+            try:
+                stack.push(int(item))
+            except ValueError:
                 y = stack.pop()
                 x = stack.pop()
                 match item:
