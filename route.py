@@ -4,7 +4,7 @@ from branch_decision import BranchDecision
 from computer import Computer
 from data_structures.linked_stack import LinkedStack
 from typing import TYPE_CHECKING, Union
-from virus import *
+# from virus import *
 
 # Avoid circular imports for typing.
 if TYPE_CHECKING:
@@ -158,7 +158,7 @@ class Route:
             elif isinstance(current, RouteSeries):
                 virus_type.add_computer(current.computer)
 
-                if current is not None:
+                if current.following.store is not None:
                 #if isinstance(current.following.store, RouteSeries) or isinstance(current.following.store, RouteSplit):
                     current = current.following.store
                 else:
@@ -202,6 +202,8 @@ class Route:
                 computers.extend(current.store.top.add_all_computers())
             if current.store.bottom is not None:
                 computers.extend(current.store.bottom.add_all_computers())
+            if current.store.following is not None:
+                computers.extend(current.store.following.add_all_computers())
 
         return computers
     

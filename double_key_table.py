@@ -29,6 +29,14 @@ class DoubleKeyTable(Generic[K1, K2, V]):
     HASH_BASE = 31
 
     def __init__(self, sizes: list | None = None, internal_sizes: list | None = None) -> None:
+        """
+        Initialize the Double Key Table.
+
+        :param sizes: The size of the top-level table, defaults to None
+        :type sizes: list | None, optional
+        :param internal_sizes: The size of the bottom-level table, defaults to None
+        :type internal_sizes: list | None, optional
+        """
         if sizes is not None:
             self.TABLE_SIZES = sizes
 
@@ -73,10 +81,48 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         Find the correct position for this key in the hash table using linear probing.
 
+        :param key1: Top-level key
+        :type key1: K1
+        :param key2: Bottom-level key
+        :type key2: K2 | None
+        :param is_insert: A boolean variable to determine if we are creating an internal hash table or not.
+        :type is_insert: bool
+
         :raises KeyError: When the key pair is not in the table, but is_insert is False.
         :raises FullError: When a table is full and cannot be inserted.
+
+        :return: If key2 = None, the Index to access the item in the top-level table.
+            If key2 != None, a tuple containing the Index to access the item in the top-level table and the Index to access the item in the bottom-level table.
+        :rtype: tuple[int, int] | int
         """
-        raise NotImplementedError()
+        # If key2 = None, the Index to access the item in the top-level table
+        if key2 is None:
+
+            # Initial position
+            position = self.hash1(key1)
+
+            for _ in range(self.table_size):
+                if self.array[position] is None:
+                    # Empty spot. Am I upserting or retrieving?
+                    if is_insert:
+                        return position
+                    else:
+                        raise KeyError("Key is not found")
+                elif self.array[position][0] == key1:
+                    return position
+                else:
+                    # The position is taken by something else. Time to linear probe.
+                    position = (position + 1) % self.table_size
+
+            if is_insert:
+                raise FullError("Table is full!")
+            else:
+                raise KeyError("Key is not found")
+
+        # Else if key2 != None, a tuple containing the Index to access the item in the top-level table and the Index to access the item in the bottom-level table
+        else:
+            
+            
 
     def iter_keys(self, key: K1 | None = None) -> Iterator[K1 | K2]:
         """
@@ -85,7 +131,9 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         key = k:
             Returns an iterator of all keys in the bottom-hash-table for k.
         """
-        raise NotImplementedError()
+        # The same functionality as above, but this should return an iterator that yields the keys/values one by one rather than searching the entire table at the start.
+        # You should NOT get all the keys/values at the start and just iterate through those. That won't be very efficient.
+        # Your iterator should only get the next item when it's needed.
 
     def iter_values(self, key: K1 | None = None) -> Iterator[V]:
         """
@@ -94,21 +142,31 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         key = k:
             Returns an iterator of all values in the bottom-hash-table for k.
         """
-        raise NotImplementedError()
+        # The same functionality as above, but this should return an iterator that yields the keys/values one by one rather than searching the entire table at the start.
+        # You should NOT get all the keys/values at the start and just iterate through those. That won't be very efficient.
+        # Your iterator should only get the next item when it's needed.
 
     def keys(self, key: K1 | None = None) -> list[K1 | K2]:
         """
         key = None: returns all top-level keys in the table.
         key = x: returns all bottom-level keys for top-level key x.
         """
-        raise NotImplementedError()
+        # If key = None, return all top-level keys in the hash table
+
+
+        # If key != None, return all low-level keys in the sub-table of top-level key. In the case that the key isn't found, raise KeyError.
+
 
     def values(self, key: K1 | None = None) -> list[V]:
         """
         key = None: returns all values in the table.
         key = x: returns all values for top-level key x.
         """
-        raise NotImplementedError()
+        # If key = None, return all values in all entries in the entire double key hash table (including both the top level and bottom levels)
+
+
+        # If key != None, restrict to all values in the sub-table of top-level key. In the case that the key isn't found, raise KeyError.
+
 
     def __contains__(self, key: tuple[K1, K2]) -> bool:
         """
@@ -157,7 +215,8 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         :raises KeyError: when the key doesn't exist.
         """
-        raise NotImplementedError()
+        # When deleting, if the key1, key2 pair was the only key1 element in the table,
+        # you should clear out the entirety of that internal table so that a new key1 with the same hash can be inserted in that position. (See test_delete for more info.)
 
     def _rehash(self) -> None:
         """
@@ -167,7 +226,8 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         :complexity worst: O(N*hash(K) + N^2*comp(K)) Lots of probing.
         Where N is len(self)
         """
-        raise NotImplementedError()
+        # Have both your top-level table and internal tables resize when the load factor of that table increases past 0.5 (See hash_table.py for an example of this logic)
+        # These resizes should occur independently (One internal table may be a different size to another, and the top level table should resize when the number of internal tables exceeds 0.5 irrespective of the resizing of the internal tables)
 
     @property
     def table_size(self) -> int:
