@@ -95,34 +95,53 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             If key2 != None, a tuple containing the Index to access the item in the top-level table and the Index to access the item in the bottom-level table.
         :rtype: tuple[int, int] | int
         """
-        # If key2 = None, the Index to access the item in the top-level table
-        if key2 is None:
 
-            # Initial position
-            position = self.hash1(key1)
-
+        # Check for key 1
+        if key1 is None:
+            raise KeyError("Key 1 is empty")
+        else:
+            position1 = self.hash1(key1)        # hash the first position
             for _ in range(self.table_size):
-                if self.array[position] is None:
-                    # Empty spot. Am I upserting or retrieving?
-                    if is_insert:
-                        return position
+                if self.array[position1] is None:
+                    if is_insert:   # if is_insert is true, create an internal table
+                        lower_table = LinearProbeTable(self.internal_sizes)
+                        lower_table.hash = lambda k, tab=lower_table: self.hash2(k, tab)
+                        self.array[position1] = (key1, lower_table)     # update self.array
                     else:
-                        raise KeyError("Key is not found")
-                elif self.array[position][0] == key1:
-                    return position
+                        raise KeyError(key1)
+                elif self.array[position1][0] == key1:
+                    break   # means position1 is already a correct value, we can break the loop
+                else:
+                    # Taken by something else. Time to linear probe.
+                    position1 = (position1 + 1) % self.table_size
+
+        if key2 is None:
+            return position1
+        elif key2 is not None:
+            # access the lower table
+            lower_table = self.array[position1][1]
+
+            # hash the position
+            position2 = self.hash2(key2, lower_table)
+
+            # lower_table.array[position2] >> accessing the internal array
+            # the hash table adt automatically help us to insert the value (refer to hash_table.py)
+            for _ in range(self.internal_sizes[0]):
+                if lower_table.array[position2] is None:
+                    if is_insert:
+                        break
+                    else:
+                        raise KeyError(key2)
+                elif lower_table.array[position2][0] == key2:
+                    break
                 else:
                     # The position is taken by something else. Time to linear probe.
-                    position = (position + 1) % self.table_size
+                    position2 = (position2 + 1) % self.internal_sizes[0]
+            return position1, position2
 
-            if is_insert:
-                raise FullError("Table is full!")
-            else:
-                raise KeyError("Key is not found")
 
         # Else if key2 != None, a tuple containing the Index to access the item in the top-level table and the Index to access the item in the bottom-level table
-        else:
-            
-            
+
 
     def iter_keys(self, key: K1 | None = None) -> Iterator[K1 | K2]:
         """
@@ -152,10 +171,16 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         key = x: returns all bottom-level keys for top-level key x.
         """
         # If key = None, return all top-level keys in the hash table
-
+        res = []
+        if key is None:
+            for x in range(self.table_size):
+                if self.array[x] is not None:
+                    res.append(self.array[x][0])
 
         # If key != None, return all low-level keys in the sub-table of top-level key. In the case that the key isn't found, raise KeyError.
-
+        else:
+            res = self.iterate_lower_table(key)
+        return res
 
     def values(self, key: K1 | None = None) -> list[V]:
         """
@@ -163,9 +188,37 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         key = x: returns all values for top-level key x.
         """
         # If key = None, return all values in all entries in the entire double key hash table (including both the top level and bottom levels)
+        res = []
+        position1 = self._linear_probe(key,None, True)
 
+        sub_table = self.array[position1][1]
+        print(sub_table[key])
+        if key is None:
+            for x in range(self.table_size):
+                if self.array[x] is not None:
+                    print("=================")
+                    print(self.array)
+                    print(self.array[x])
+                    print(self.array[x][0])
+                    print(self.array[x][1])
+                    print("=================")
+                    res.append(self.array[x][0])
+                    lower_table = self.array[x][1]
+                    if lower_table is not None:
+                        self.iterate_lower_table(key)
 
         # If key != None, restrict to all values in the sub-table of top-level key. In the case that the key isn't found, raise KeyError.
+
+        return res
+
+    def iterate_lower_table(self, key) -> list:
+        res = []
+        pos = self._linear_probe(key, None, False)
+        lower_table = self.array[pos][1]
+        for y in range(self.internal_sizes[0]):
+            if lower_table.array[y] is not None:
+                res.append(lower_table.array[y][0])
+        return res
 
 
     def __contains__(self, key: tuple[K1, K2]) -> bool:
@@ -198,6 +251,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         key1, key2 = key
         position1, position2 = self._linear_probe(key1, key2, True)
+        # print(position1,position2)
         sub_table = self.array[position1][1]
 
         if sub_table.is_empty():
@@ -248,4 +302,10 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         Not required but may be a good testing tool.
         """
-        raise NotImplementedError()
+        result = ""
+        for i, item in enumerate(self.array):
+            if item is None:
+                result += f"{i}: None\n"
+            else:
+                result += f"{i}: {item}\n"
+        return result
