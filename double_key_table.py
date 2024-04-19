@@ -164,7 +164,9 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             sub_table = self.array[pos][1]
 
             # Traverse each item in the internal hash table and yield all the keys one by one
-            
+            for y in range(sub_table.table_size):
+                if sub_table.array[y] is not None:
+                    yield sub_table.array[y][0]
 
     def iter_values(self, key: K1 | None = None) -> Iterator[V]:
         """
