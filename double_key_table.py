@@ -115,7 +115,6 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                     
                     # Update the top-level table to contain key1 and the internal hash table
                     self.array[position1] = (key1, table)
-                    self.count += 1
                     break
                 
                 # Otherwise raise an error if the key is not found
@@ -135,7 +134,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         # Otherwise get the internal hash table from the top-level table
         table = self.array[position1][1]
         
-        # Hash key2 to get the position of key2 in the internal table
+        # Get the position of key2 in the internal table
         position2 = table._linear_probe(key2, is_insert)
 
         # Return the index to access the item in the top-level table and the index to access the item in the bottom-level table
@@ -148,25 +147,18 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         key = k:
             Returns an iterator of all keys in the bottom-hash-table for k.
         """
-        # If key = None
+        # Iterate through self.array and use yield to produce the keys one by one
         if key is None:
-            # Traverse each item in the top-level table and yield all the keys one by one
-            for x in range(self.table_size):
-                if self.array[x] is not None:
-                    yield self.array[x][0]
+            for k in range(self.table_size):
+                if self.array[k] is not None:
+                    yield self.array[k][0]
 
-        # Else if key != None
         else:
-            # Get the position of the key in the top-level table
-            pos = self._linear_probe(key, None, False)
-            
-            # Get the internal hash table from the position
-            sub_table = self.array[pos][1]
-
-            # Traverse each item in the internal hash table and yield all the keys one by one
-            for y in range(sub_table.table_size):
-                if sub_table.array[y] is not None:
-                    yield sub_table.array[y][0]
+            position = self._linear_probe(key, None, False)
+            sub_table = self.array[position][1]
+            for k in range(sub_table.table_size):
+                if sub_table[k] is not None:
+                    yield sub_table[k][0]
 
     def iter_values(self, key: K1 | None = None) -> Iterator[V]:
         """
@@ -175,25 +167,18 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         key = k:
             Returns an iterator of all values in the bottom-hash-table for k.
         """
-        # If key = None
+        # Iterate through the hash table and generate the values one by one
         if key is None:
-            # Traverse each item in the top-level table and yield all the values one by one
-            for x in range(self.table_size):
-                if self.array[x] is not None:
-                    yield self.array[x][1]
+            for k in range(self.table_size):
+                if self.array[k] is not None:
+                    yield self.array[k][1]
 
-        # Else if key != None
         else:
-            # Get the position of the key in the top-level table
-            pos = self._linear_probe(key, None, False)
-            
-            # Get the internal hash table from the position
-            sub_table = self.array[pos][1]
-
-            # Traverse each item in the internal hash table and yield all the values one by one
-            for y in range(sub_table.table_size):
-                if sub_table.array[y] is not None:
-                    yield sub_table.array[y][1]
+            position = self._linear_probe(key, None, False)
+            sub_table = self.array[position][1]
+            for k in range(sub_table.table_size):
+                if sub_table[k] is not None:
+                    yield sub_table[k][1]
 
     def keys(self, key: K1 | None = None) -> list[K1 | K2]:
         """
@@ -212,19 +197,13 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         # If key != None, return all low-level keys in the sub-table of top-level key
         else:
             # Get the position of the key in the top-level table
-            pos = self._linear_probe(key, None, False)
+            position = self._linear_probe(key, None, False)
 
             # Get the internal hash table from the position
-            sub_table = self.array[pos][1]
+            sub_table = self.array[position][1]
 
-            # Traverse each item in the internal hash table and append all the keys to res
-            for y in range(sub_table.table_size):
-                if sub_table.array[y] is not None:
-                    res.append(sub_table.array[y][0])
-
-            # In the case that the key isn't found, raise KeyError
-            if res == []:
-                raise KeyError(f"No key is found for {key}")
+            # Get all keys in the internal hash table
+            res = sub_table.keys()
             
         return res
 
@@ -246,19 +225,13 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         # If key != None, restrict to all values in the sub-table of top-level key
         else:
             # Get the position of the key in the top-level table
-            pos = self._linear_probe(key, None, False)
+            position = self._linear_probe(key, None, False)
 
             # Get the internal hash table from the position
-            sub_table = self.array[pos][1]
+            sub_table = self.array[position][1]
 
-            # Traverse each item in the internal hash table and append all the values to res
-            for y in range(sub_table.table_size):
-                if sub_table.array[y] is not None:
-                    res.append(sub_table.array[y][1])
-            
-            # In the case that the key isn't found, raise KeyError
-            if res == []:
-                raise KeyError(f"No key is found for {key}")
+            # Get all values in the internal hash table
+            res = sub_table.values()
 
         return res
 
@@ -309,8 +282,30 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         :raises KeyError: when the key doesn't exist.
         """
-        # When deleting, if the key1, key2 pair was the only key1 element in the table,
-        # you should clear out the entirety of that internal table so that a new key1 with the same hash can be inserted in that position. (See test_delete for more info.)
+        # Get the position of the key in the top-level table
+        position = self._linear_probe(key[0], None, False)
+
+        # Get the internal hash table from the position
+        sub_table = self.array[position][1]
+
+        # Check if the key1, key2 pair was the only key1 element in the table
+        if len(sub_table) == 1:
+            # Remove the element and clear out the entirely of that internal table
+            self.array[position] = None
+            self.count -= 1
+            # Start moving over the cluster
+            position = (position + 1) % self.table_size
+            while self.array[position] is not None:
+                key2, value = self.array[position]
+                self.array[position] = None
+                # Reinsert
+                newpos = self._linear_probe(key2, None, True)
+                self.array[newpos] = (key2, value)
+                position = (position + 1) % self.table_size
+
+        # Otherwise, delete the (key, value) pair in the internal hash table
+        else:
+            del sub_table[key[1]] # This time you're cute fr :)
 
     def _rehash(self) -> None:
         """
@@ -320,8 +315,17 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         :complexity worst: O(N*hash(K) + N^2*comp(K)) Lots of probing.
         Where N is len(self)
         """
-        # Have both your top-level table and internal tables resize when the load factor of that table increases past 0.5 (See hash_table.py for an example of this logic)
-        # These resizes should occur independently (One internal table may be a different size to another, and the top level table should resize when the number of internal tables exceeds 0.5 irrespective of the resizing of the internal tables)
+        old_array = self.array
+        self.size_index += 1
+        if self.size_index >= len(self.TABLE_SIZES):
+            # Cannot be resized further
+            return
+        self.array = ArrayR(self.TABLE_SIZES[self.size_index])
+        self.count = 0
+        for item in old_array:
+            if item is not None:
+                position = self.hash1(item[0])
+                self.array[position] = item
 
     @property
     def table_size(self) -> int:
@@ -351,28 +355,26 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         return res
     
 if __name__ == "__main__":
-    class TestingDKT(DoubleKeyTable):
-        def hash1(self, k):
-            return ord(k[0]) % 12
-        def hash2(self, k, sub_table):
-            return ord(k[-1]) % 5
+    # Test that these are actually iterators,
+    # and so changing the underlying data structure changes the next value.
+    dt = DoubleKeyTable()
+    dt["May", "Jim"] = 1
+    dt["Kim", "Tim"] = 2
 
-    dt = TestingDKT(sizes=[12], internal_sizes=[5])
+    key_iterator = dt.iter_keys()
+    value_iterator = dt.iter_values()
 
-    dt["Tim", "Jen"] = 1
-    dt["Amy", "Ben"] = 2
-    dt["May", "Ben"] = 3
-    dt["Ivy", "Jen"] = 4
-    dt["May", "Tom"] = 5
-    dt["Tim", "Bob"] = 6
+    key = next(key_iterator)
+    print(key) # Either one of ["May", "Kim"]
+    value = next(value_iterator) # <data_structures.hash_table.LinearProbeTable object at 0x00000297AEA88A40> not found in [1, 2]
+    print(value) # Either one of [1, 2]
 
-    print(lambda: dt._linear_probe("May", "Jim", False)) # KeyError
-    print(dt._linear_probe("May", "Jim", True)) # (6, 1)
+    del dt["May", "Jim"]
+    del dt["Kim", "Tim"]
 
-    dt["May", "Jim"] = 7 # Linear probing on internal table
-    print(dt._linear_probe("May", "Jim", False)) # (6, 1)
-    print(lambda: dt._linear_probe("Het", "Liz", False)) # KeyError
-    print(dt._linear_probe("Het", "Liz", True)) # (2, 2)
-    
-    dt["Het", "Liz"] = 8 # Linear probing on external table
-    print(dt._linear_probe("Het", "Liz", False)) # (2, 2)
+    # Retrieving the next value should either raise StopIteration or crash entirely.
+    # Note: Deleting from an element being iterated over is bad practice
+    # We just want to make sure you aren't returning a list and are doing this
+    # with an iterator.
+    next(key_iterator) # Should raise BaseException
+    next(value_iterator) # Should raise BaseException
