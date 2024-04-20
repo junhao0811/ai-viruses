@@ -172,7 +172,12 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         if key is None:
             for k in range(self.table_size):
                 if self.array[k] is not None:
-                    yield self.array[k][1]
+                    sub_table = self.array[k][1]
+
+                    # Get all values in the internal hash table
+                    value_list = sub_table.values()
+
+                    yield value_list[k]
 
         else:
             position = self._linear_probe(key, None, False)
@@ -219,9 +224,13 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             for x in range(self.table_size):
                 if self.array[x] is not None:
                     sub_table = self.array[x][1]
-                    for y in range(sub_table.table_size):
-                        if sub_table.array[y] is not None:
-                            res.append(sub_table.array[y][1])
+                    # Get all values in the internal hash table
+                    value_list = sub_table.values()
+
+                    # add one by one of the value into the final list
+                    for i in range(len(value_list)):
+                        res.append(value_list[i])
+
         
         # If key != None, restrict to all values in the sub-table of top-level key
         else:
@@ -305,7 +314,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         # Otherwise, delete the (key, value) pair in the internal hash table
         else:
-            del sub_table[key[1]] # This time you're cute fr :)
+            del sub_table[key[1]] 
 
     def _rehash(self) -> None:
         """
