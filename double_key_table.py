@@ -173,10 +173,8 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             for k in range(self.table_size):
                 if self.array[k] is not None:
                     sub_table = self.array[k][1]
-
                     # Get all values in the internal hash table
                     value_list = sub_table.values()
-
                     yield value_list[k]
 
         else:
