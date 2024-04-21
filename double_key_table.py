@@ -189,14 +189,14 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         key = None: returns all top-level keys in the table.
         key = x: returns all bottom-level keys for top-level key x.
         """
-        res = []
-
         # If key = None, return all top-level keys in the hash table
         if key is None:
+            res = []
             # Traverse each item in the top-level table and append all the keys to res
             for x in range(self.table_size):
                 if self.array[x] is not None:
                     res.append(self.array[x][0])
+            return res
 
         # If key != None, return all low-level keys in the sub-table of top-level key
         else:
@@ -207,29 +207,25 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             sub_table = self.array[position][1]
 
             # Get all keys in the internal hash table
-            res = sub_table.keys()
+            return sub_table.keys()
             
-        return res
-
     def values(self, key: K1 | None = None) -> list[V]:
         """
         key = None: returns all values in the table.
         key = x: returns all values for top-level key x.
         """
         # If key = None, return all values in all entries in the entire double key hash table (including both the top level and bottom levels)
-        res = []
         if key is None:
+            res = []
             for x in range(self.table_size):
                 if self.array[x] is not None:
                     sub_table = self.array[x][1]
                     # Get all values in the internal hash table
                     value_list = sub_table.values()
-
-                    # add one by one of the value into the final list
                     for i in range(len(value_list)):
                         res.append(value_list[i])
+            return res
 
-        
         # If key != None, restrict to all values in the sub-table of top-level key
         else:
             # Get the position of the key in the top-level table
@@ -239,9 +235,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             sub_table = self.array[position][1]
 
             # Get all values in the internal hash table
-            res = sub_table.values()
-
-        return res
+            return sub_table.values()
 
     def __contains__(self, key: tuple[K1, K2]) -> bool:
         """
