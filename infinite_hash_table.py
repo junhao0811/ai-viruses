@@ -22,6 +22,12 @@ class InfiniteHashTable(Generic[K, V]):
     TABLE_SIZE = 27
 
     def __init__(self, level: int = 0) -> None:
+        """
+        Initialises the table. You may add optional arguments here if you like.
+
+        :param level: Specifies what level of hash table hierarchy we are hashing for, defaults to 0
+        :type level: int, optional
+        """
         self.array: ArrayR[tuple[K, V] | None] = ArrayR(self.TABLE_SIZE)
         self.count = 0
         self.level = level
@@ -87,6 +93,6 @@ class InfiniteHashTable(Generic[K, V]):
 
     def sort_keys(self, current=None) -> list[str]:
         """
-        Returns all keys currently in the table in lexicographically sorted order.
+        Returns all keys currently in the table in lexicographically (按字典顺序) sorted order.
         """
         raise NotImplementedError()
