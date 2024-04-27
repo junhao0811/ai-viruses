@@ -38,24 +38,51 @@ class InfiniteHashTable(Generic[K, V]):
         :raises KeyError: when the key doesn't exist.
         """
         # Traverse the infinite depth hash table
-        count = 0
         current_table = self.array
-        while count <= self.level:
+        while True:
             try:
                 position = self.hash(key)
             except:
                 raise KeyError("Key doesn't exist")
             else:
-                if isinstance(current_table[position][1], int):
+                if not isinstance(current_table[position][1], ArrayR):
                     return current_table[position][0]
                 current_table = current_table[position][1]
-                count += 1
+                self.level += 1
             
     def __setitem__(self, key: K, value: V) -> None:
         """
         Set an (key, value) pair in our hash table.
         """
-        raise NotImplementedError()
+        # Traverse the infinite depth hash table
+        current_table = self.array
+        while True:
+            # Hash the key to get the position
+            position = self.hash(key)
+
+            # If the position is empty, insert the (key, value) pair in our hash table
+            if current_table[position] is None:
+                current_table[position] = (key, value)
+                self.count += 1
+                return
+            
+            # Store what was previously in the position in a variable
+            prev_key, prev_value = current_table[position]
+            if not isinstance(prev_value, ArrayR):
+                current_table[position] = (prev_key[:self.level + 1], ArrayR(self.TABLE_SIZE))
+                self.level += 1
+                # Hash the previous key to get the position in the newly created hash table
+                prev_key_position = self.hash(prev_key)
+
+            # Move to the next hash table
+            current_table = prev_value
+            
+            # If the hash table is empty, insert the (key, value) pair in our hash table
+            if len(current_table) == 0:
+                current_table[prev_key_position] = (prev_key, prev_value)
+                current_table[position] = (key, value)
+                self.count += 1
+                return
 
     def __delitem__(self, key: K) -> None:
         """
