@@ -37,38 +37,25 @@ class InfiniteHashTable(Generic[K, V]):
 
         :raises KeyError: when the key doesn't exist.
         """
-
+        # Traverse the infinite depth hash table
+        count = 0
+        current_table = self.array
+        while count <= self.level:
+            try:
+                position = self.hash(key)
+            except:
+                raise KeyError("Key doesn't exist")
+            else:
+                if isinstance(current_table[position][1], int):
+                    return current_table[position][0]
+                current_table = current_table[position][1]
+                count += 1
+            
     def __setitem__(self, key: K, value: V) -> None:
         """
         Set an (key, value) pair in our hash table.
         """
-        pos_list = self.get_location(key)
-        current = self.array
-        final_index = pos_list.pop()
-        # update the current array
-        # Collision occurs >> update
-        count = 1
-        # iterate through the location list
-        for i in pos_list:
-            prev_key, prev_value = current[i]      # retrieve the previous collided key
-            prev_list = self.get_location(prev_key)
-
-            # if previously haven create an infinite hash table, create now
-            if not isinstance(prev_value, InfiniteHashTable):
-                current[i] = (prev_key[:count], InfiniteHashTable())       # update the key to the first letter
-                current[i][1].level = count     # update the level of hash table
-            count += 1
-            current = current[i][1].array
-
-            if i == pos_list[-1]:
-                current[prev_list[-1]] = (prev_key, prev_value)
-
-        current[final_index] = (key, value)
-
-        # Update the level of the current hash table
-        current.level = len(pos_list) + 1
-
-        self.count += 1
+        raise NotImplementedError()
 
     def __delitem__(self, key: K) -> None:
         """
@@ -99,29 +86,7 @@ class InfiniteHashTable(Generic[K, V]):
 
         :raises KeyError: when the key doesn't exist.
         """
-        # create an empty list to store the location
-        res = []
-
-        # track current table level
-        current = self
-        if type(current) != int:
-            current.level = 0
-
-        # iterate through the length of the key and slice to calculate the hash value
-        while True:
-            pos = self.hash(key)
-            # print(f"Position for {temp_key}: {pos}")  # Debugging print statement
-            res.append(pos)
-
-            if type(current) == int or current.array[pos] is None:  # use for check in set method
-                break
-            elif current.array[pos][0] == key and type(current.array[pos][1]) == int:      # use in direct retrieving
-                break
-            else:
-                current.level += 1
-                current = current.array[pos][1]     # update the current to the next internal table
-
-        return res
+        raise NotImplementedError()
 
     def __contains__(self, key: K) -> bool:
         """
