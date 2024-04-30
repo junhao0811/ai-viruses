@@ -1,6 +1,6 @@
 from __future__ import annotations
+from algorithms.mergesort import *
 from typing import Generic, TypeVar
-
 from data_structures.referential_array import ArrayR
 
 K = TypeVar("K")
@@ -25,6 +25,7 @@ class InfiniteHashTable(Generic[K, V]):
         self.array: ArrayR[tuple[K, V] | None] = ArrayR(self.TABLE_SIZE)
         self.count = 0
         self.level = level
+        self.key_list = []
 
     def hash(self, key: K) -> int:
         if self.level < len(key):
@@ -37,64 +38,71 @@ class InfiniteHashTable(Generic[K, V]):
 
         :raises KeyError: when the key doesn't exist.
         """
+        # Initialize a pointer to the top table
         current_table = self.array
 
-        # reset the level of the hash table
+        # Reset the level of the hash table
         self.level = 0
-        # iterate through the infinite depth hash table
+
+        # Iterate through the infinite depth hash table
         while True:
+            # Hash the key to get the position
+            pos = self.hash(key)
 
-            # hash the key to get the position
-            position = self.hash(key)
-
-            # raise KeyError if there is no element in the position
-            if current_table[position] is None:
+            # Raise KeyError if there is nothing in the position
+            if current_table[pos] is None:
                 raise KeyError(key)
 
-            # check if there is a value in the tuple
-            elif not isinstance(current_table[position][1], ArrayR):
-                return current_table[position][1]
+            # Check if there is a value in the tuple
+            elif not isinstance(current_table[pos][1], ArrayR):
+                return current_table[pos][1]
 
-            # update the current table and move to the next level
-            current_table = current_table[position][1]
+            # Update the current table and move on to the next level of hash table
+            current_table = current_table[pos][1]
             self.level += 1
 
     def __setitem__(self, key: K, value: V) -> None:
         """
         Set an (key, value) pair in our hash table.
         """
-        # Traverse the infinite depth hash table
+        # Initialize a pointer to the top table
         current_table = self.array
-        # reset the level
+
+        # Reset the level of the hash table
         self.level = 0
+        self.key_list.append(key)
+        
+        # Traverse the infinite depth hash table
         while True:
             # Hash the key to get the position
-            position = self.hash(key)
+            pos = self.hash(key)
 
             # If the position is empty, insert the new (key, value) pair in our hash table
-            if current_table[position] is None:
-                current_table[position] = (key, value)
+            if current_table[pos] is None:
+                current_table[pos] = (key, value)
                 self.count += 1
-                break
+                return
 
-            # Store what was previously in the position in a variable
             else:
-                prev_key, prev_value = current_table[position]
+                # Store what was previously in the position in a variable
+                prev_key, prev_value = current_table[pos]
+
                 if not isinstance(prev_value, ArrayR):
-                    current_table[position] = (prev_key[:self.level + 1], ArrayR(self.TABLE_SIZE))
+                    current_table[pos] = (prev_key[:self.level + 1], ArrayR(self.TABLE_SIZE))
                     self.level += 1
                     # Hash the previous key to get the position in the newly created hash table
-                    prev_key_position = self.hash(prev_key)
+                    prev_key_pos = self.hash(prev_key)
 
-                    # Move to the next level hash table
-                    current_table = current_table[position][1]
+                    # Move on to the hash table in the next level
+                    current_table = current_table[pos][1]
 
-                    # insert the previous (key, value) pair in the next level hash table
-                    current_table[prev_key_position] = (prev_key, prev_value)
+                    # Insert the previous (key, value) pair in the hash table of next level
+                    current_table[prev_key_pos] = (prev_key, prev_value)
+
                 else:
-                    # update and move to the next level hash table
-                    current_table = current_table[position][1]
+                    # Update and move on to the hash table in the next level
                     self.level += 1
+                    current_table = current_table[pos][1]
 
     def __delitem__(self, key: K) -> None:
         """
@@ -102,22 +110,34 @@ class InfiniteHashTable(Generic[K, V]):
 
         :raises KeyError: when the key doesn't exist.
         """
-        # get the position of the key
+        # Get the positions of the key
         pos_list = self.get_location(key)
         current_table = self.array
+        self.key_list.remove(key)
 
-        # traverse the hash table to update the current table
-        for i in pos_list:
-            # if there is an inner hash table, update the current table
-            if isinstance(current_table[i][1], ArrayR):
-                current_table = current_table[i][1].array
-            # if it reaches the final position of the table, remove the key and value
-            elif i == pos_list[-1]:
-                current_table[i] = None
+        # Traverse the hash table
+        for pos in pos_list:
+            # If there is a pointer to another hash table, update the current table
+            if isinstance(current_table[pos][1], ArrayR):
+                current_table = current_table[pos][1]
+            # Else if it reaches the final position of the table, remove the key and value pair from the table
+            elif pos == pos_list[-1]:
+                current_table[pos] = None
+        
+        # Update self.count and call the recursive delete method
         self.count -= 1
-        self._del_recursion(current_table, pos_list)
+        self._collapse_table(current_table, pos_list)
 
-    def _del_recursion(self, current_table, pos_list) -> None:
+    def _collapse_table(self, current_table: ArrayR[tuple[K, V] | None], pos_list: list[int]) -> None:
+        """Recursively collapse the hash table to a single entry in the parent table
+        until there is a table with multiple pairs or it reaches the top table if there is
+        only a single pair within the current table.
+
+        :param current_table: The current hash table
+        :type current_table: ArrayR
+        :param pos_list: The list of positions to access the key
+        :type pos_list: List[int]
+        """
         index_list = []
 
         # iterate through the current table to determine the length of the current table
@@ -125,33 +145,34 @@ class InfiniteHashTable(Generic[K, V]):
             if current_table[i] is not None:
                 index_list.append(i)
 
-        # updating the hash table from back to the front
-        # base case: if there is more than 1 item in the index list or it reaches the first level hash table
+        # Base case should be when there are multiple pairs or when it reaches the top table
         if len(index_list) != 1 or len(pos_list) == 0:
             return
+        
+        # Recursive call to collapse the hash table to a single entry in the parent table
         else:
-            # unpacked the key value of the left item in the table
+            # Unpack the (key, value) pair of the remaining item in the hash table
             key, value = current_table[index_list[0]]
 
-            # update the current table back to first level table
+            # Reset the pointer to point to the top table
             current_table = self.array
 
-            # if the item left does not have any internal ArrayR, update the (key,value) back to previous level position
+            # If the item left does not have any internal ArrayR, update the (key, value) pair back to previous level position
             if isinstance(value, int):
 
-                # remove the last level index from the pos list
+                # Remove the last level index from the pos list
                 pos_list.pop()
 
-                # iterate through position list until it reaches correct table level
-                # update the key,value at the previous level position
+                # Iterate through pos_list until it reaches correct table level
+                # Update the (key, value) pair at the previous level position
                 for i in pos_list:
                     if i == pos_list[-1]:
                         current_table[i] = (key, value)
                     else:
-                        current_table = current_table[i][1].array
+                        current_table = current_table[i][1]
 
-                # call the method again until it reaches the base case
-                self._del_recursion(current_table, pos_list)
+                # Recursively call the method again until it reaches the base case
+                self._collapse_table(current_table, pos_list)
 
     def __len__(self) -> int:
         return self.count
@@ -174,27 +195,28 @@ class InfiniteHashTable(Generic[K, V]):
 
         :raises KeyError: when the key doesn't exist.
         """
-        # traverse through the list
         res = []
-        current = self.array
 
-        # iterate until it reaches the final position
+        # Initialize a pointer to the top table
+        current_table = self.array
+
+        # Iterate until it reaches the final position
         while True:
-            # iterate through the table in each level
-            for i in range(len(current)):
-                # check if the position is none
-                if current[i] is not None:
-                    # retrieve the key inserted to compare with the new key
-                    if current[i][0] in key:
-                        res.append(i)
+            # Iterate through the table in each level
+            for pos in range(len(current_table)):
+                # Check if the position is None
+                if current_table.array[pos] is not None:
+                    # Retrieve the key inserted to compare with the new key
+                    if current_table.array[pos][0] in key:
+                        res.append(pos)
                         break
-                # if it reaches the final position in the table and no key is found, raise KeyError
-                if i == len(current) - 1:
+                # If it reaches the final position in the table and no key is found, raise KeyError
+                if pos == len(current_table) - 1:
                     raise KeyError(key)
 
-            # check if there is next level of hash table
-            if isinstance(current[i][1], ArrayR):
-                current = current[i][1]
+            # Check if there is next level of hash table
+            if isinstance(current_table[pos][1], ArrayR):
+                current_table = current_table[pos][1]
             else:
                 return res
 
@@ -215,7 +237,7 @@ class InfiniteHashTable(Generic[K, V]):
         """
         Returns all keys currently in the table in lexicographically sorted order.
         """
-        raise NotImplementedError()
+        return mergesort(self.key_list)
 
 
 if __name__ == "__main__":

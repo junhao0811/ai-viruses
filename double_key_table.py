@@ -122,7 +122,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                 raise KeyError(f"{key1} is not found in the top-level table")
                 
             # Else if key1 already exists in that spot, break out the from the loop
-            elif self.array[position1][0] == key1:
+            elif self.array[position1][0] == key1: # Put this condition in infinite hash table
                 break
 
             # Otherwise the position is taken by something else, time to linear probe
