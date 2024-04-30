@@ -19,7 +19,7 @@ class ComputerOrganiser:
         if computer not in self.computers:
             raise KeyError(f"Computer {computer} not found in the organiser")
         
-        return binary_search(computer)
+        return binary_search(self.computers, computer)
 
     def add_computers(self, computers: list[Computer]) -> None:
         """
@@ -29,11 +29,12 @@ class ComputerOrganiser:
             M is the length of the input list, and
             N is the total number of computers included so far.
         """
-        # To determine the threat of the virus we are going to rank each potential virus by its hacking difficulty.
-
-
-        # In cases where the hacking difficulty is the same, you should then order them by their risk factor in ascending order.
-
-        
+        # Sort by its hacking difficulty.
+        # If the hacking difficulty is the same, order them by their risk factor in ascending order.
         # If there is still a tie, you should order them by name lexicographically increasing (you can assume the name is unique)
-        # hacking difficulty > risk factor > name lexicographically increasing (unique name)
+
+        # Sort the new computers
+        computers = mergesort(computers, key=lambda computer: (computer.get_hacking_difficulty(), computer.get_risk_factor(), computer.get_name()))
+
+        # Merge the list of new computers with the existing comptuers in the organiser
+        self.computers = merge(self.computers, computers, key=lambda computer: (computer.get_hacking_difficulty(), computer.get_risk_factor(), computer.get_name()))
