@@ -12,7 +12,7 @@ class ComputerManager:
         """
         Initialisation
         """
-        self.computers = LinearProbeTable()
+        self.manager = LinearProbeTable()
 
     def add_computer(self, computer: Computer) -> None:
         """
@@ -23,7 +23,10 @@ class ComputerManager:
 
         :complexity: O(1) for best/worst case when adding the computer to the hash table
         """
-        self.computers[computer.get_name()] = computer
+        # k1: hacking_diff
+        # k2: computer object
+        # v: computer name
+        self.manager[computer.get_name()] = computer
 
     def remove_computer(self, computer: Computer) -> None:
         """
@@ -34,7 +37,7 @@ class ComputerManager:
 
         :complexity: O(1) for best/worst case when removing the computer from the hash table
         """
-        del self.computers[computer.get_name()]
+        del self.manager[computer.get_name()]
 
     def edit_computer(self, old: Computer, new: Computer) -> None:
         """
@@ -62,7 +65,7 @@ class ComputerManager:
         :complexity: O(N) for best/worst case where N is the number of computers in the hash table
         """
         # Retrieve all the computers in the hash table and store it in a list
-        computers = self.computers.values()
+        computers = self.manager.values()
 
         res = []
         for computer in computers:
@@ -80,7 +83,7 @@ class ComputerManager:
         :complexity: O(N log (N) + M) for best/worst case where N is the number of computers in the hash table
         """
         # Retrieve all the computers in the hash table and store it in a list
-        computers = self.computers.values()
+        computers = self.manager.values()
 
         # Sort the list of computers by ascending hacking difficulty
         computers = mergesort(computers, key=lambda computer: computer.get_hacking_difficulty())
