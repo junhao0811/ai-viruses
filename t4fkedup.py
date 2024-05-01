@@ -38,71 +38,76 @@ class InfiniteHashTable(Generic[K, V]):
 
         :raises KeyError: when the key doesn't exist.
         """
-        # Initialize a pointer to the top table
-        current_table = self.array
+        # Call auxiliary method
+        return self.get_item_aux(self, key)
 
-        # Reset the level of the hash table
-        self.level = 0
+    def get_item_aux(self, current_table: InfiniteHashTable, key: K) -> V:
+        """
+        Auxiliary method to get the value at a certain key
 
-        # Iterate through the infinite depth hash table
-        while True:
-            # Hash the key to get the position
-            pos = self.hash(key)
+        :raises KeyError: when the key doesn't exist.
+        """
+        # Hash the key to get the position
+        if isinstance(key, int):
+            return key
+        else:
+            pos = current_table.hash(key)
 
-            # Raise KeyError if there is nothing in the position
-            if current_table[pos] is None:
-                raise KeyError(key)
+            # Base case - if the key doesn't exist, raise a KeyError
+            if current_table.array[pos] is None:
+                raise KeyError(f"Key '{key}' doesn't exist")
 
-            # Check if there is a value in the tuple
-            elif not isinstance(current_table[pos][1], ArrayR):
-                return current_table[pos][1]
+            # Base case - if the key exists in the current position, return its value
+            elif not isinstance(current_table.array[pos][1], InfiniteHashTable):
+                if current_table.array[pos][0] != key:
+                    raise KeyError(f"Key '{key}' doesn't exist")
+                return current_table.array[pos][1]
 
-            # Update the current table and move on to the next level of hash table
-            current_table = current_table[pos][1]
-            self.level += 1
+            # Recursive call to the next level of hash table
+            else:
+                current_table.level += 1
+                return self.get_item_aux(current_table.array[pos][1], key)
 
     def __setitem__(self, key: K, value: V) -> None:
         """
         Set an (key, value) pair in our hash table.
         """
         # Initialize a pointer to the top table
-        current_table = self.array
 
         # Reset the level of the hash table
-        self.level = 0
-        self.key_list.append(key)
-        
-        # Traverse the infinite depth hash table
-        while True:
-            # Hash the key to get the position
-            pos = self.hash(key)
+        if key not in self.key_list:
+            self.key_list.append(key)
+        self.set_item_aux(self, key, value)
 
-            # If the position is empty, insert the new (key, value) pair in our hash table
-            if current_table[pos] is None:
-                current_table[pos] = (key, value)
-                self.count += 1
+    def set_item_aux(self, current_table: InfiniteHashTable, key: K, value: V):
+        # Hash the key to get the position
+        pos = current_table.hash(key)
+        # If the position is empty, insert the new (key, value) pair in our hash table
+        if current_table.array[pos] is None:
+            current_table.array[pos] = (key, value)
+            return
+
+        else:
+            # Store what was previously in the position in a variable
+            prev_key, prev_value = current_table.array[pos]
+            # Base case: the key already exists in that position
+            if current_table.array[pos][0] == key:
+                current_table.array[pos] = (key, value)
+
                 return
 
+            # update the previous key value into new position
+            if not isinstance(prev_value, InfiniteHashTable):
+                current_table.array[pos] = (prev_key[:current_table.level + 1], InfiniteHashTable(current_table.level))
+                current_table = current_table.array[pos][1]
+                current_table.level += 1
+                current_table.set_item_aux(current_table, prev_key, prev_value)
+                current_table.set_item_aux(current_table, key, value)
+
             else:
-                # Store what was previously in the position in a variable
-                prev_key, prev_value = current_table[pos]
+                current_table = current_table.array[pos][1]
+                current_table.set_item_aux(current_table, key, value)
 
-                if not isinstance(prev_value, ArrayR):
-                    current_table[pos] = (prev_key[:self.level + 1], ArrayR(self.TABLE_SIZE))
-                    self.level += 1
-                    # Hash the previous key to get the position in the newly created hash table
-                    prev_key_pos = self.hash(prev_key)
-
-                    # Move on to the hash table in the next level
-                    current_table = current_table[pos][1]
-
-                    # Insert the previous (key, value) pair in the hash table of next level
-                    current_table[prev_key_pos] = (prev_key, prev_value)
-
-                else:
-                    # Update and move on to the hash table in the next level
-                    self.level += 1
-                    current_table = current_table[pos][1]
 
     def __delitem__(self, key: K) -> None:
         """
@@ -123,7 +128,7 @@ class InfiniteHashTable(Generic[K, V]):
             # Else if it reaches the final position of the table, remove the key and value pair from the table
             elif pos == pos_list[-1]:
                 current_table[pos] = None
-        
+
         # Update self.count and call the recursive delete method
         self.count -= 1
         self._collapse_table(current_table, pos_list)
@@ -148,7 +153,7 @@ class InfiniteHashTable(Generic[K, V]):
         # Base case should be when there are multiple pairs or when it reaches the top table
         if len(index_list) != 1 or len(pos_list) == 0:
             return
-        
+
         # Recursive call to collapse the hash table to a single entry in the parent table
         else:
             # Unpack the (key, value) pair of the remaining item in the hash table
@@ -189,36 +194,40 @@ class InfiniteHashTable(Generic[K, V]):
                 table_str += f"{i}: {item}\n"
         return table_str
 
-    def get_location(self, key) -> list[int]:
+    def get_location(self, key: K) -> list[int]:
         """
         Get the sequence of positions required to access this key.
 
         :raises KeyError: when the key doesn't exist.
         """
-        res = []
+        # Call auxiliary method
+        return self.get_location_aux(self, key, [])
 
-        # Initialize a pointer to the top table
-        current_table = self.array
+    def get_location_aux(self, current_table: InfiniteHashTable, key: K, positions: list[int]) -> list[int]:
+        """
+        Auxiliary method to get the sequence of positions required to access this key.
 
-        # Iterate until it reaches the final position
-        while True:
-            # Iterate through the table in each level
-            for pos in range(len(current_table)):
-                # Check if the position is None
-                if current_table.array[pos] is not None:
-                    # Retrieve the key inserted to compare with the new key
-                    if current_table.array[pos][0] in key:
-                        res.append(pos)
-                        break
-                # If it reaches the final position in the table and no key is found, raise KeyError
-                if pos == len(current_table) - 1:
-                    raise KeyError(key)
+        :raises KeyError: when the key doesn't exist.
+        """
+        # Hash the key to get the position
+        pos = current_table.hash(key)
 
-            # Check if there is next level of hash table
-            if isinstance(current_table[pos][1], ArrayR):
-                current_table = current_table[pos][1]
-            else:
-                return res
+        # Base case - if the key doesn't exist, raise a KeyError
+        if current_table.array[pos] is None:
+            raise KeyError(f"Key '{key}' doesn't exist")
+
+        # Base case - if the key exists in the current position, return the list of positions
+        elif not isinstance(current_table.array[pos][1], InfiniteHashTable):
+            if current_table.array[pos][0] != key:
+                raise KeyError(f"Key '{key}' doesn't exist")
+            positions.append(pos)
+            return positions
+
+        else:
+            # Store the position in the list of positions first
+            positions.append(pos)
+
+            return self.get_location_aux(current_table.array[pos][1], key, positions)
 
     def __contains__(self, key: K) -> bool:
         """
@@ -244,33 +253,51 @@ if __name__ == "__main__":
     ih = InfiniteHashTable()
     ih["lin"] = 1
     ih["leg"] = 2
+
+    # print(ih.get_location("lin"))
+    # print(ih.get_location("leg"))
+    # print(len(ih))
+
     ih["mine"] = 3
     ih["linked"] = 4
+    # print(ih.get_location("mine"))
+    # print(ih.get_location("lin"))
+    # print(ih.get_location("linked"))
+    # print(len(ih))
     ih["limp"] = 5
     ih["mining"] = 6
     ih["jake"] = 7
     ih["linger"] = 8
+    ih["linger"] = 9
+    ih["jake"] = 10
+    print(len(ih))
 
-    del ih["limp"]
-    print(ih.get_location("linked"))
+    # print(len(ih))
 
-    del ih["mine"]
-    print(ih.get_location("mining"))
-
-    del ih["mining"]
-    del ih["jake"]
-    del ih["leg"]
-    del ih["linger"]
-    del ih["linked"]
-    print(ih.get_location("lin"))
+    # self.assertEqual(ih.get_location("lin"), [4, 1])
+    # self.assertEqual(ih.get_location("leg"), [4, 23])
+    # self.assertEqual(len(ih), 2)
+    # ih["mine"] = 3
+    # ih["linked"] = 4
+    # self.assertEqual(ih.get_location("mine"), [5])
+    # self.assertEqual(ih.get_location("lin"), [4, 1, 6, 26])
+    # self.assertEqual(ih.get_location("linked"), [4, 1, 6, 3])
+    # self.assertEqual(len(ih), 4)
     #
-    # self.assertEqual(ih["lin"], 1)
-    # self.assertEqual(ih.get_location("lin"), [4])
-    #
-    del ih["lin"]
-    #
-    ih["lin"] = 10
-    print(ih.get_location("lin"))
+    # del ih["mining"]
+    # del ih["jake"]
+    # del ih["leg"]
+    # del ih["linger"]
+    # del ih["linked"]
+    # print(ih.get_location("lin"))
+    # #
+    # # self.assertEqual(ih["lin"], 1)
+    # # self.assertEqual(ih.get_location("lin"), [4])
+    # #
+    # del ih["lin"]
+    # #
+    # ih["lin"] = 10
+    # print(ih.get_location("lin"))
 
     # self.assertEqual(ih.get_location("lin"), [4])
     # self.assertEqual(len(ih), 1)
