@@ -7,7 +7,7 @@ from computer import Computer
 class ComputerOrganiser:
 
     def __init__(self) -> None:
-        self.computers = []
+        self.organiser = []
 
     def cur_position(self, computer: Computer) -> int:
         """
@@ -16,10 +16,10 @@ class ComputerOrganiser:
 
         Complexity: O(log(N)) where N is the total number of computers included so far.
         """
-        if computer not in self.computers:
+        if computer not in self.organiser:
             raise KeyError(f"Computer {computer} not found in the organiser")
         
-        return binary_search(self.computers, computer)
+        return binary_search(self.organiser, computer)
 
     def add_computers(self, computers: list[Computer]) -> None:
         """
@@ -37,4 +37,4 @@ class ComputerOrganiser:
         computers = mergesort(computers, key=lambda computer: (computer.get_hacking_difficulty(), computer.get_risk_factor(), computer.get_name()))
 
         # Merge the list of new computers with the existing comptuers in the organiser
-        self.computers = merge(self.computers, computers, key=lambda computer: (computer.get_hacking_difficulty(), computer.get_risk_factor(), computer.get_name()))
+        self.organiser = merge(self.organiser, computers, key=lambda computer: (computer.get_hacking_difficulty(), computer.get_risk_factor(), computer.get_name()))
