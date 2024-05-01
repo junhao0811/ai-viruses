@@ -128,9 +128,9 @@ class InfiniteHashTable(Generic[K, V]):
 
         :raises KeyError: when the key doesn't exist.
         """
+
         # Initialise a pointer to the top table
         current_table = self
-
         # Create a linked stack to store the pointers to the hash tables
         stack = LinkedStack()
 
@@ -143,11 +143,15 @@ class InfiniteHashTable(Generic[K, V]):
             if current_table.array[pos] is None:
                 raise KeyError(f"Key '{key}' doesn't exist because it's None")
 
+            elif key in current_table.key_list:
+                current_table.count -= 1
+                current_table.key_list.remove(key)
+
             # Else if the bucket contains a pointer to the next level hash table, push the pointer to the stack and move the pointer to point to the next table
-            elif isinstance(current_table.array[pos][1], InfiniteHashTable):
+            if isinstance(current_table.array[pos][1], InfiniteHashTable):
                 stack.push(current_table)
                 current_table = current_table.array[pos][1]
-            
+
             # Else if the last level hash table is reached
             elif not isinstance(current_table.array[pos][1], InfiniteHashTable):
                 # Check if it is the same key or not
@@ -156,9 +160,8 @@ class InfiniteHashTable(Generic[K, V]):
                 else:
                     # Delete the key from the hash table
                     current_table.array[pos] = None
-                    current_table.count -= 1
                     break
-            
+
         if len(current_table) == 1:
             return self.collapse_table(current_table, stack)
 
@@ -171,33 +174,31 @@ class InfiniteHashTable(Generic[K, V]):
         # Base case - if the length of the current table is greater than 1
         if len(current_table) > 1 or current_table.level == 0:
             return
-        
+
         # Recursive call
         else:
-            pos = 0
-            for i in range(current_table.TABLE_SIZE):
+            for i in range(self.TABLE_SIZE):
                 if current_table.array[i] is not None:
                     pos = i
                     break
 
             # Pop the parent table from the stack
             parent_table = stack.pop()
-            
+
             # Store the key and value in a temporary variable
-            item = current_table.array[pos]
+            key, value = current_table.array[pos]
 
             # Point the current table to the parent table
             current_table = parent_table
 
             # Hash the key to get the position in the previous table
-            if item is not None:
-                old_pos = current_table.hash(item[0])
-            
+            old_pos = current_table.hash(key)
+
             # Store the key and value in the parent table
-            current_table.array[old_pos] = item
+            current_table.array[old_pos] = (key, value)
 
             # Update current_table to become the parent table
-            return self.collapse_table(current_table, stack)
+            self.collapse_table(current_table, stack)
 
     def __len__(self) -> int:
         return self.count
