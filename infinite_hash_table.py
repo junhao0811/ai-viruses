@@ -27,7 +27,7 @@ class InfiniteHashTable(Generic[K, V]):
         """
         Initialise the Infinite Hash Table.
 
-        :complexity: O(n) for best/worst case where n is self.TABLE_SIZE
+        :complexity: O(N) for best/worst case when initialising the array where N is self.TABLE_SIZE
         """
         self.array: ArrayR[tuple[K, V] | None] = ArrayR(self.TABLE_SIZE)
         self.count = 0
@@ -46,7 +46,8 @@ class InfiniteHashTable(Generic[K, V]):
         Get the value at a certain key
 
         :raises KeyError: when the key doesn't exist.
-        :complexity: O(get_item_aux(self, key))
+
+        :complexity: O(get_item_aux)
         """
         # Call auxiliary method
         return self.get_item_aux(self, key)
@@ -56,9 +57,10 @@ class InfiniteHashTable(Generic[K, V]):
         Auxiliary method to get the value at a certain key
 
         :raises KeyError: when the key doesn't exist.
+
         :complexity:
             :best case: O(1) when the key already exists at the top table.
-            :worst case: O(n) when the key exists at the last level hash table, where n the depth of infinite hash table.
+            :worst case: O(N) when the key exists at the last level hash table, where N the depth of infinite hash table.
         """
         # Hash the key to get the position
         pos = current_table.hash(key)
@@ -79,20 +81,26 @@ class InfiniteHashTable(Generic[K, V]):
 
     def __setitem__(self, key: K, value: V) -> None:
         """
-        Set an (key, value) pair in our hash table.
-        :complexity: O(set_item_aux(self, key, value))
+        Set a (key, value) pair in our hash table.
+        :complexity: O(set_item_aux)
         """
         self.count += 1
-
         # Call the auxiliary method
-        self.set_item_aux(self, key, value)
+        tracker = self.set_item_aux(self, key, value, LinkedStack())
+        if tracker is not None:
+            if tracker.peek() is True:
+                self.count -= 1
 
-    def set_item_aux(self, current_table: InfiniteHashTable, key: K, value: V):
+    def set_item_aux(self, current_table: InfiniteHashTable, key: K, value: V, repeat_element: LinkedStack) -> LinkedStack | None:
         """
-        Auxiliary method to set an (key, value) pair in our hash table.
+        Auxiliary method to set a (key, value) pair in our hash table.
+
         :complexity:
             :best case: O(1) when the position in the top table is empty or the key already exists in the position in the top table.
-            :worst case: O(n)
+            :worst case: O(N * [S + I]) when the position we want to insert the (key, value) pair is at the last level hash table and whilst continuously creating a new hash table where
+                N is the maximum depth of the hash table
+                S is the complexity of the slice operation when slicing the key
+                I is the complexity of initialising the InfiniteHashTable
         """
         # Hash the key to get the position
         pos = current_table.hash(key)
@@ -100,6 +108,7 @@ class InfiniteHashTable(Generic[K, V]):
         # If the position is empty, insert the new (key, value) pair in our hash table
         if current_table.array[pos] is None:
             current_table.array[pos] = (key, value)
+            repeat_element.push(False)
             return
 
         # Store what was previously in the position in a variable
@@ -111,10 +120,11 @@ class InfiniteHashTable(Generic[K, V]):
             if current_table.array[pos][0] == key:  # O(comp)
                 current_table.array[pos] = (key, value)
                 current_table.count -= 1
+                repeat_element.push(True)
                 return
+
             # Create a new hash table to store previous (key, value) pair
-            current_table.array[pos] = (prev_key[:current_table.level + 1],
-                                        InfiniteHashTable(current_table.level))  # O(k) where k is the size of key
+            current_table.array[pos] = (prev_key[:current_table.level + 1], InfiniteHashTable(current_table.level))  # O(k) where k is the size of key + O(I)
 
             # Update the current table to the infinite hash table created
             current_table = current_table.array[pos][1]
@@ -132,13 +142,22 @@ class InfiniteHashTable(Generic[K, V]):
             current_table.count += 1
 
         # Recursive call with the updated current table and new key value
-        self.set_item_aux(current_table, key, value)
+        self.set_item_aux(current_table, key, value, repeat_element)   
+        if repeat_element.peek() is True:
+            current_table.count -= 1
+        return repeat_element
 
     def __delitem__(self, key: K) -> None:
         """
         Deletes a (key, value) pair in our hash table.
 
         :raises KeyError: when the key doesn't exist.
+        
+        :complexity:
+            :best case: O(1) when the item targeted for deletion appears at the top table
+            :worst case: O(N + M) when the item targeted for deletion is the only item located at the last level hash table
+                N is the maximum depth of the target key
+                M is the complexity of self.collapse_table()
         """
 
         # Initialise a pointer to the top table
@@ -153,7 +172,7 @@ class InfiniteHashTable(Generic[K, V]):
 
             # Raises KeyError if the key doesn't exist
             if current_table.array[pos] is None:
-                raise KeyError(f"Key '{key}' doesn't exist because it's None")
+                raise KeyError(f"Key '{key}' doesn't exist")
 
             current_table.count -= 1
 
@@ -167,7 +186,7 @@ class InfiniteHashTable(Generic[K, V]):
             elif not isinstance(current_table.array[pos][1], InfiniteHashTable):
                 # Check if it is the same key or not
                 if current_table.array[pos][0] != key:
-                    raise KeyError(f"Key '{key}' doesn't exist because it's not the same key")
+                    raise KeyError(f"Key '{key}' doesn't exist")
                 else:
                     # Delete the key from the hash table
                     current_table.array[pos] = None
@@ -181,6 +200,10 @@ class InfiniteHashTable(Generic[K, V]):
         Collapse the hash table to a single entry in the parent table
         until there is a table with multiple pairs or it reaches the top table if there is
         only a single pair within the current table.
+        :complexity:
+            :best: O(1) when the current table has more than one (key, value) pair or it is the top table
+            :worst: O(N * self.TABLE_SIZE) when there is only one element in each level, and it needs to recursively call the method until the base case where it reaches the top level, where
+                N is the maximum depth of the hash table
         """
         # Base case - if the length of the current table is greater than 1
         if len(current_table) > 1 or current_table.level == 0:
@@ -196,17 +219,17 @@ class InfiniteHashTable(Generic[K, V]):
             # Pop the parent table from the stack
             parent_table = stack.pop()
 
-            # Store the key and value in a temporary variable
+            # Unpack the key and value in a temporary variable
             key, value = current_table.array[pos]
 
             # Point the current table to the parent table
             current_table = parent_table
 
             # Hash the key to get the position in the previous table
-            old_pos = current_table.hash(key)
+            oldpos = current_table.hash(key)
 
             # Store the key and value in the parent table
-            current_table.array[old_pos] = (key, value)
+            current_table.array[oldpos] = (key, value)
 
             # Update current_table to become the parent table
             self.collapse_table(current_table, stack)
@@ -223,17 +246,14 @@ class InfiniteHashTable(Generic[K, V]):
 
         Not required but may be a good testing tool.
         """
-        table_str = ""
-        for i, item in enumerate(self.array):
-            if item is not None:
-                table_str += f"{i}: {item}\n"
-        return table_str
+        pass
 
     def get_location(self, key: K) -> list[int]:
         """
         Get the sequence of positions required to access this key.
 
         :raises KeyError: when the key doesn't exist.
+        :complexity: O(get_location_aux)
         """
         # Call auxiliary method
         return self.get_location_aux(self, key, [])
@@ -243,6 +263,9 @@ class InfiniteHashTable(Generic[K, V]):
         Auxiliary method to get the sequence of positions required to access this key.
 
         :raises KeyError: when the key doesn't exist.
+        :complexity:
+            :best: O(1) when the item targeted for deletion appears at the top table
+            :worst: O(N) when the key exists at the last level hash table, where N is the maximum depth of the infinite hash table
         """
         # Hash the key to get the position
         pos = current_table.hash(key)
@@ -291,10 +314,11 @@ class InfiniteHashTable(Generic[K, V]):
         Auxiliary method for sort_keys
 
         :complexity:
-            O(N * A * L) when there is a maximum depth of the hash table
-            N is the number of words inserted
-            L is the length of the longest word
-            A is the size of the alphabet (26)
+            :best case: O(self.TABLE_SIZE) when there are no inner infinite hash table and all the (key, value) pairs are stored in the top table
+            :worst case: O(N * A * L) when there are infinite hash tables in the table and the keys are stored in the last level hash table
+                N is the number of words inserted
+                A is the size of the alphabet (26)
+                L is the length of the longest word
         """
         if current_table is None:
             current_table = self
@@ -332,74 +356,3 @@ if __name__ == "__main__":
     ih["linger"] = 8
     res = ih.sort_keys()
     print(res)
-
-# if __name__ == "__main__":
-#     ih = InfiniteHashTable()
-
-#     # test set & get_location
-#     ih["lin"] = 1
-#     ih["leg"] = 2
-
-#     print(ih.get_location("lin"))  # [4, 1]
-#     print(ih.get_location("leg"))  # [4, 23]
-#     print(len(ih))  # 2
-
-#     ih["mine"] = 3
-#     ih["linked"] = 4
-
-#     print(ih.get_location("mine"))  # [5]
-#     print(ih.get_location("lin"))  # [4, 1, 6, 26]
-#     print(ih.get_location("linked"))  # [4, 1, 6, 3]
-#     print(len(ih))  # 4
-
-#     ih["limp"] = 5
-#     ih["mining"] = 6
-
-#     print(ih.get_location("limp"))  # [4, 1, 5]
-#     print(ih.get_location("mine"))  # [5, 1, 6, 23]
-#     print(ih.get_location("mining"))  # [5, 1, 6, 1]
-#     print(len(ih))  # 6
-
-#     ih["jake"] = 7
-#     ih["linger"] = 8
-
-#     print(ih.get_location("jake"))  # [2]
-#     print(ih.get_location("linger"))  # [4, 1, 6, 25]
-#     print(len(ih))  # 8
-
-#     # # test_delete
-#     # ih["lin"] = 1
-#     # ih["leg"] = 2
-#     # ih["mine"] = 3
-#     # ih["linked"] = 4
-#     # ih["limp"] = 5
-#     # ih["mining"] = 6
-#     # ih["jake"] = 7
-#     # ih["linger"] = 8
-#     #
-#     # del ih["limp"]
-#     # print(ih.get_location("linked"))  # [4, 1, 6, 3]
-#     #
-#     # del ih["mine"]
-#     # print(ih.get_location("mining"))  # [5]
-#     #
-#     # del ih["mining"]
-#     # del ih["jake"]
-#     # del ih["leg"]
-#     # del ih["linger"]
-#     # del ih["linked"]
-#     #
-#     # print(ih["lin"])  # 1
-#     # print(ih.get_location("lin"))  # [4]
-#     #
-#     # del ih["lin"]
-#     # print(len(ih))  # 1
-#     # ih["lin"] = 10
-#     # print(ih.get_location("lin"))  # [4]
-#     # print(len(ih))  # 1
-
-#     # test get
-#     print(ih["lin"])
-#     print(ih["leg"])
-#     print(ih["jake"])
-#     print(ih["linger"])
