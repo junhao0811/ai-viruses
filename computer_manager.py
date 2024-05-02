@@ -12,7 +12,7 @@ class ComputerManager:
         """
         Initialisation
         """
-        self.manager = LinearProbeTable()
+        self.manager = DoubleKeyTable()
 
     def add_computer(self, computer: Computer) -> None:
         """
@@ -23,10 +23,7 @@ class ComputerManager:
 
         :complexity: O(1) for best/worst case when adding the computer to the hash table
         """
-        # k1: hacking_diff
-        # k2: computer object
-        # v: computer name
-        self.manager[computer.get_name()] = computer
+        self.manager[(str(computer.get_hacking_difficulty()), computer.get_name())] = computer
 
     def remove_computer(self, computer: Computer) -> None:
         """
@@ -62,16 +59,9 @@ class ComputerManager:
         :return: A list of computers with the given hacking difficulty
         :rtype: list[Computer]
 
-        :complexity: O(N) for best/worst case where N is the number of computers in the hash table
+        :complexity: O(1) for best/worst case
         """
-        # Retrieve all the computers in the hash table and store it in a list
-        computers = self.manager.values()
-
-        res = []
-        for computer in computers:
-            if computer.get_hacking_difficulty() == diff:
-                res.append(computer)
-        return res
+        return self.manager.values(str(diff))
 
     def group_by_difficulty(self) -> list[list[Computer]]:
         """
@@ -82,30 +72,15 @@ class ComputerManager:
 
         :complexity: O(N log (N) + M) for best/worst case where N is the number of computers in the hash table
         """
-        # Retrieve all the computers in the hash table and store it in a list
-        computers = self.manager.values()
-
-        # Sort the list of computers by ascending hacking difficulty
-        computers = mergesort(computers, key=lambda computer: computer.get_hacking_difficulty())
-
-        # Initialise the result list and the current list
         res = []
-        cur = []
 
-        # Iterate through the sorted list of computers
-        for computer in computers:
+        # Retrieve all the top level keys in the DoubleKeyTable, which is a list of hacking difficulties
+        # and sort the list of hacking difficulties by ascending order using mergesort
+        diff_lst = mergesort(self.manager.keys())
 
-            # If the current list is empty or the hacking difficulty is the same as the last computer then add the computer to the current list
-            if len(cur) == 0 or computer.get_hacking_difficulty() == cur[-1].get_hacking_difficulty():
-                cur.append(computer)
+        # Iterate through the sorted list of hacking difficulties
+        for diff in diff_lst:
+            # Retrieve all the computer with the hacking difficulty and append it to res
+            res.append(self.manager.values(str(diff)))
 
-            # Otherwise add the current list to the result list and create a new current list with the current computer
-            else:
-                res.append(cur)
-                cur = [computer]
-
-        # Add the last current list to the result list
-        res.append(cur)
-
-        # Return the result list
         return res

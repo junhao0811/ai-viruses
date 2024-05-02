@@ -133,7 +133,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             return position1
             
         # Otherwise get the internal hash table from the top-level table
-        table = self.array[position1][1]
+        table: LinearProbeTable = self.array[position1][1]
         
         # Get the position of key2 in the internal table
         position2 = table._linear_probe(key2, is_insert)
@@ -150,16 +150,19 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         # Iterate through self.array and use yield to produce the keys one by one
         if key is None:
-            for k in range(self.table_size):
-                if self.array[k] is not None:
-                    yield self.array[k][0]
+            for pos in range(self.table_size):
+                if self.array[pos] is not None:
+                    yield self.array[pos][0]
 
         else:
-            position = self._linear_probe(key, None, False)
-            sub_table = self.array[position][1]
-            for k in range(sub_table.table_size):
-                if sub_table[k] is not None:
-                    yield sub_table[k][0]
+            # Iterate through the top level table
+            for pos in range(self.table_size):
+                if self.array[pos] is not None and self.array[pos][0] == key:
+                    sub_table: LinearProbeTable = self.array[pos][1]
+                    # Yield the keys one by one
+                    for sub_pos in range(sub_table.table_size):
+                        if sub_table[sub_pos] is not None:
+                            yield sub_table[sub_pos][0]
 
     def iter_values(self, key: K1 | None = None) -> Iterator[V]:
         """
@@ -170,19 +173,21 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         # Iterate through the hash table and generate the values one by one
         if key is None:
-            for k in range(self.table_size):
-                if self.array[k] is not None:
-                    sub_table = self.array[k][1]
+            for pos in range(self.table_size):
+                if self.array[pos] is not None:
+                    sub_table = self.array[pos][1]
                     # Get all values in the internal hash table
                     value_list = sub_table.values()
-                    yield value_list[k]
+                    yield value_list[pos]
 
         else:
-            position = self._linear_probe(key, None, False)
-            sub_table = self.array[position][1]
-            for k in range(sub_table.table_size):
-                if sub_table[k] is not None:
-                    yield sub_table[k][1]
+            for pos in range(self.table_size):
+                if self.array[pos] is not None and self.array[pos][0] == key:
+                    sub_table: LinearProbeTable = self.array[pos][1]
+                    # Yield the values one by one
+                    for sub_pos in range(sub_table.table_size):
+                        if sub_table[sub_pos] is not None:
+                            yield sub_table[sub_pos][1]
 
     def keys(self, key: K1 | None = None) -> list[K1 | K2]:
         """
@@ -193,22 +198,20 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         if key is None:
             res = []
             # Traverse each item in the top-level table and append all the keys to res
-            for x in range(self.table_size):
-                if self.array[x] is not None:
-                    res.append(self.array[x][0])
+            for pos in range(self.table_size):
+                if self.array[pos] is not None:
+                    res.append(self.array[pos][0])
             return res
 
         # If key != None, return all low-level keys in the sub-table of top-level key
         else:
-            # Get the position of the key in the top-level table
-            position = self._linear_probe(key, None, False)
+            # Iterate through the top level table
+            for pos in range(self.table_size):
+                if self.array[pos] is not None and self.array[pos][0] == key:
+                    # Get the sub table and return its values
+                    sub_table: LinearProbeTable = self.array[pos][1]
+                    return sub_table.keys()
 
-            # Get the internal hash table from the position
-            sub_table = self.array[position][1]
-
-            # Get all keys in the internal hash table
-            return sub_table.keys()
-            
     def values(self, key: K1 | None = None) -> list[V]:
         """
         key = None: returns all values in the table.
@@ -217,9 +220,9 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         # If key = None, return all values in all entries in the entire double key hash table (including both the top level and bottom levels)
         if key is None:
             res = []
-            for x in range(self.table_size):
-                if self.array[x] is not None:
-                    sub_table = self.array[x][1]
+            for pos in range(self.table_size):
+                if self.array[pos] is not None:
+                    sub_table: LinearProbeTable = self.array[pos][1]
                     # Get all values in the internal hash table
                     value_list = sub_table.values()
                     for i in range(len(value_list)):
@@ -228,14 +231,12 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         # If key != None, restrict to all values in the sub-table of top-level key
         else:
-            # Get the position of the key in the top-level table
-            position = self._linear_probe(key, None, False)
-
-            # Get the internal hash table from the position
-            sub_table = self.array[position][1]
-
-            # Get all values in the internal hash table
-            return sub_table.values()
+            # Iterate through the top level table
+            for pos in range(self.table_size):
+                if self.array[pos] is not None and self.array[pos][0] == key:
+                    # Get the sub table and return its values
+                    sub_table: LinearProbeTable = self.array[pos][1]
+                    return sub_table.values()
 
     def __contains__(self, key: tuple[K1, K2]) -> bool:
         """
