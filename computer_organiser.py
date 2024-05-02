@@ -16,7 +16,7 @@ class ComputerOrganiser:
 
         Complexity: O(log(N)) where N is the total number of computers included so far.
         """
-        if computer not in self.organiser:
+        if computer not in self.organiser: # O(N) ???
             raise KeyError(f"Computer {computer} not found in the organiser")
         
         return binary_search(self.organiser, computer)

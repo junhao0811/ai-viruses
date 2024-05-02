@@ -23,8 +23,6 @@ class ComputerManager:
 
         :param computer: The computer to be added to the manager
         :type computer: Computer
-
-        :complexity: O(1) for best/worst case when adding the computer to the hash table
         """
         self.manager[(str(computer.get_hacking_difficulty()), computer.get_name())] = computer
 
@@ -34,8 +32,6 @@ class ComputerManager:
 
         :param computer: The computer to be removed from the manager
         :type computer: Computer
-
-        :complexity: O(1) for best/worst case when removing the computer from the hash table
         """
         del self.manager[(str(computer.get_hacking_difficulty()), computer.get_name())]
 
@@ -47,8 +43,6 @@ class ComputerManager:
         :type old: Computer
         :param new: The computer to be added to the manager
         :type new: Computer
-
-        :complexity: O(1) for best/worst case when removing the old computer and adding the new computer to the hash table
         """
         self.remove_computer(old)
         self.add_computer(new)
@@ -61,8 +55,6 @@ class ComputerManager:
         :type diff: int
         :return: A list of computers with the given hacking difficulty
         :rtype: list[Computer]
-
-        :complexity: O(1) for best/worst case
         """
         return self.manager.values(str(diff))
 
@@ -73,7 +65,9 @@ class ComputerManager:
         :return: List of lists of all computers grouped by hacking difficulty
         :rtype: list[list[Computer]]
 
-        :complexity: O(N log (N) + M) for best/worst case where N is the number of computers in the hash table
+        :complexity: O(N log (N) + M) for best/worst case where
+            N is the number of computers in the hash table
+            M is the number of unique hacking difficulties
         """
         res = []
 
