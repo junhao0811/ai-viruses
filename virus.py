@@ -9,13 +9,13 @@ from data_structures.linked_stack import LinkedStack
 class VirusType(ABC):
     """
     A VirusType is a type of virus that can be transmitted through a computer network.
+
+    Unless stated otherwise, all methods have O(1) complexity.
     """
 
     def __init__(self) -> None:
         """
         Initializes the VirusType object with an empty list of computers that the virus has been transmitted through.
-
-        Complexity: O(1) for best/worst case scenarios.
         """
         self.computers = []
 
@@ -24,8 +24,6 @@ class VirusType(ABC):
 
         Args:
             computer (Computer): The computer that the virus has just been transmitted through
-
-        Complexity: O(1) for best/worst case scenarios.
         """
         self.computers.append(computer)
 
@@ -39,8 +37,6 @@ class VirusType(ABC):
 
         Returns:
             BranchDecision: A BranchDecision enum value
-
-        Complexity: O(1) for best/worst case scenarios.
         """
         pass
 
@@ -60,8 +56,6 @@ class TopVirus(VirusType):
 
         Returns:
             BranchDecision: A BranchDecision enum value
-
-        Complexity: O(1) for best/worst case scenarios.
         """
         # Always select the top branch
         return BranchDecision.TOP
@@ -82,8 +76,6 @@ class BottomVirus(VirusType):
 
         Returns:
             BranchDecision: A BranchDecision enum value
-
-        Complexity: O(1) for best/worst case scenarios.
         """
         # Always select the bottom branch
         return BranchDecision.BOTTOM
@@ -105,8 +97,6 @@ class LazyVirus(VirusType):
 
         Returns:
             BranchDecision: A BranchDecision enum value
-
-        Complexity: O(1) for best/worst case scenarios.
         """
         top_route = type(top_branch.store) == RouteSeries
         bot_route = type(bottom_branch.store) == RouteSeries
@@ -142,8 +132,6 @@ class RiskAverseVirus(VirusType):
 
         Returns:
             BranchDecision: A BranchDecision enum value
-
-        Complexity: O(1) for best/worst case scenarios.
         """
         top_route = type(top_branch.store) == RouteSeries
         bot_route = type(bottom_branch.store) == RouteSeries
@@ -168,8 +156,9 @@ class RiskAverseVirus(VirusType):
                 # Continue to the next comparisons if there is still a tie
 
             # Take the highest value between the hacking_difficulty and the half of the hacked_value then divide it by the risk factor
-            top_path_value = max(top_comp.hacking_difficulty, top_comp.hacked_value / 2) / top_comp.risk_factor
-            bot_path_value = max(bot_comp.hacking_difficulty, bot_comp.hacked_value / 2) / bot_comp.risk_factor
+            if top_comp.risk_factor != 0 or bot_comp.risk_factor != 0:
+                top_path_value = max(top_comp.hacking_difficulty, top_comp.hacked_value // 2) // top_comp.risk_factor
+                bot_path_value = max(bot_comp.hacking_difficulty, bot_comp.hacked_value // 2) // bot_comp.risk_factor
             
             # Compare the two paths and take the path with the higher value
             if top_path_value > bot_path_value:
@@ -209,7 +198,7 @@ class FancyVirus(VirusType):
         Returns:
             BranchDecision: A BranchDecision enum value
 
-        Complexity: O(n) for best/worst case scenarios where n is the number of items in self.CALC_STR.
+        Complexity: O(N) for best/worst case scenarios where N is the number of items in self.CALC_STR.
         """
         # Calculate a threshold by evaluating self.CALC_STR using reverse polish notation
         stack = LinkedStack()

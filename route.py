@@ -135,7 +135,7 @@ class Route:
         Args:
             virus_type (VirusType): The virus type to follow the path with.
 
-        Complexity: O(n) for best/worst case where n is the number of paths in the route.
+        Complexity: O(N) for best/worst case where N is the number of paths in the route.
         """
         # Without using recursion
         next_route = LinkedStack()
@@ -159,7 +159,6 @@ class Route:
                 virus_type.add_computer(current.computer)
 
                 if current.following.store is not None:
-                #if isinstance(current.following.store, RouteSeries) or isinstance(current.following.store, RouteSplit):
                     current = current.following.store
                 else:
                     if not next_route.is_empty():
@@ -180,7 +179,7 @@ class Route:
         Returns:
             list[Computer]: A list of Computers that are within this route.
 
-        Complexity: O(n) for best/worst case where n is the total number of computers and branches combined.
+        Complexity: O(N) for best/worst case where N is the total number of computers and branches combined.
         """
         current = self
         computers = []
@@ -207,26 +206,26 @@ class Route:
 
         return computers
     
-if __name__ == "__main__":
-    top_top = Computer("top-top", 5, 3, 0.1)
-    top_bot = Computer("top-bot", 3, 5, 0.2)
-    top_mid = Computer("top-mid", 4, 7, 0.3)
-    bot_one = Computer("bot-one", 2, 5, 0.4)
-    bot_two = Computer("bot-two", 0, 0, 0.5)
-    final = Computer("final", 4, 4, 0.6)
-    route = Route(RouteSplit(
-        Route(RouteSplit(
-            Route(RouteSeries(top_top, Route(None))),
-            Route(RouteSeries(top_bot, Route(None))),
-            Route(RouteSeries(top_mid, Route(None))),
-        )),
-        Route(RouteSeries(bot_one, Route(RouteSplit(
-            Route(RouteSeries(bot_two, Route(None))),
-            Route(None),
-            Route(None),
-        )))),
-        Route(RouteSeries(final, Route(None)))
-    ))
-    fv = FancyVirus()
-    FancyVirus.CALC_STR = "7 3 + 8 - 2 *"
-    route.follow_path(fv)
+# if __name__ == "__main__":
+#     top_top = Computer("top-top", 5, 3, 0.1)
+#     top_bot = Computer("top-bot", 3, 5, 0.2)
+#     top_mid = Computer("top-mid", 4, 7, 0.3)
+#     bot_one = Computer("bot-one", 2, 5, 0.4)
+#     bot_two = Computer("bot-two", 0, 0, 0.5)
+#     final = Computer("final", 4, 4, 0.6)
+#     route = Route(RouteSplit(
+#         Route(RouteSplit(
+#             Route(RouteSeries(top_top, Route(None))),
+#             Route(RouteSeries(top_bot, Route(None))),
+#             Route(RouteSeries(top_mid, Route(None))),
+#         )),
+#         Route(RouteSeries(bot_one, Route(RouteSplit(
+#             Route(RouteSeries(bot_two, Route(None))),
+#             Route(None),
+#             Route(None),
+#         )))),
+#         Route(RouteSeries(final, Route(None)))
+#     ))
+#     fv = FancyVirus()
+#     FancyVirus.CALC_STR = "7 3 + 8 - 2 *"
+#     route.follow_path(fv)

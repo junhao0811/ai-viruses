@@ -32,11 +32,6 @@ class DoubleKeyTable(Generic[K1, K2, V]):
     def __init__(self, sizes: list | None = None, internal_sizes: list | None = None) -> None:
         """
         Initialize the Double Key Table.
-
-        :param sizes: The size of the top-level table, defaults to None
-        :type sizes: list | None, optional
-        :param internal_sizes: The size of the bottom-level table, defaults to None
-        :type internal_sizes: list | None, optional
         """
         if sizes is not None:
             self.TABLE_SIZES = sizes
@@ -95,6 +90,13 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         :return: If key2 = None, the Index to access the item in the top-level table.
             If key2 != None, a tuple containing the Index to access the item in the top-level table and the Index to access the item in the bottom-level table.
         :rtype: tuple[int, int] | int
+
+        :complexity:
+            :best case: O(hash1(key1) + I) when key2 is None and the first position is empty
+            :worst case: O([hash1(key1) + M*comp(key1) + I] + [hash2(key2) + N*comp(key2)]) when we've searched the entire table where N is the tablesize when key2 is not None
+                I is the complexity of initialising the DoubleKeyTable.
+                M is self.table_size
+                N is the table size of the internal hash table.
         """
         # Check whether key1 is passed in as an argument
         if key1 is None:
@@ -109,7 +111,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             if self.array[position1] is None:
                 # Create a new internal hash table if is_insert is true and this is the first pair with key1
                 if is_insert:
-                    table = LinearProbeTable(self.internal_sizes)
+                    table = LinearProbeTable(self.internal_sizes) 
 
                     # This ensures any internal table uses hash2 for hashing keys
                     table.hash = lambda k, tab=table: self.hash2(k, tab)
@@ -122,7 +124,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                 raise KeyError(f"{key1} is not found in the top-level table")
                 
             # Else if key1 already exists in that spot, break out the from the loop
-            elif self.array[position1][0] == key1: # Put this condition in infinite hash table
+            elif self.array[position1][0] == key1:
                 break
 
             # Otherwise the position is taken by something else, time to linear probe
@@ -136,7 +138,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         table: LinearProbeTable = self.array[position1][1]
         
         # Get the position of key2 in the internal table
-        position2 = table._linear_probe(key2, is_insert)
+        position2 = table._linear_probe(key2, is_insert) 
 
         # Return the index to access the item in the top-level table and the index to access the item in the bottom-level table
         return position1, position2
@@ -147,20 +149,33 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             Returns an iterator of all top-level keys in hash table
         key = k:
             Returns an iterator of all keys in the bottom-hash-table for k.
+
+        :complexity best: O(1) when two scenarios:
+                            1. if key is None and there is an element located at the first position in the top level table
+                            2. if key is not None and the key is located at the first position in the top level table,
+                               and then when a (key, value) pair exists in the first position in the internal hash table.
+                               
+        :complexity worst: O(N + M + comp(K)) when two scenarios:
+                            1. if key is None and there is only an element located at the last position in the top level table
+                            2. if key is not None and the (key, value) pair is the only element at the last position in the top level table 
+                               and then when a (key,value) pair is the only existing pair in the last position in the internal hash table
+                            Where N is the table size of the top-level table
+                            Where M is the table size of the internal hash table
+                            Where K is the key
         """
         # Iterate through self.array and use yield to produce the keys one by one
         if key is None:
-            for pos in range(self.table_size):
+            for pos in range(self.table_size): # O(N) where N is self.table_size
                 if self.array[pos] is not None:
                     yield self.array[pos][0]
 
         else:
             # Iterate through the top level table
-            for pos in range(self.table_size):
-                if self.array[pos] is not None and self.array[pos][0] == key:
+            for pos in range(self.table_size): # O(N) where N is self.table_size
+                if self.array[pos] is not None and self.array[pos][0] == key: # O(comp(K))
                     sub_table: LinearProbeTable = self.array[pos][1]
                     # Yield the keys one by one
-                    for sub_pos in range(sub_table.table_size):
+                    for sub_pos in range(sub_table.table_size): # O(M) where M is the table size of the internal hash table
                         if sub_table[sub_pos] is not None:
                             yield sub_table[sub_pos][0]
 
@@ -170,22 +185,35 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             Returns an iterator of all values in hash table
         key = k:
             Returns an iterator of all values in the bottom-hash-table for k.
+
+        :complexity best: O(1) when two scenarios:
+                            1. if key is None and there is an element located at the first position in the top level table
+                            2. if key is not None and the key is located at the first position in the top level table,
+                               and then when a (key, value) pair exists in the first position in the internal hash table.
+                               
+        :complexity worst: O(N + M + comp(K)) when two scenarios:
+                            1. if key is None and there is only an element located at the last position in the top level table
+                            2. if key is not None and the (key, value) pair is the only element at the last position in the top level table 
+                               and then when a (key,value) pair is the only existing pair in the last position in the internal hash table
+                            Where N is the table size of the tope-level table
+                            Where M is the table size of the internal hash table
+                            Where K is the key
         """
         # Iterate through the hash table and generate the values one by one
         if key is None:
-            for pos in range(self.table_size):
-                if self.array[pos] is not None:
+            for pos in range(self.table_size):  # O(N) where N is self.table_size
+                if self.array[pos] is not None: 
                     sub_table = self.array[pos][1]
                     # Get all values in the internal hash table
-                    value_list = sub_table.values()
-                    yield value_list[pos]
+                    value_list = sub_table.values()  # O(M) where M is the table size of the internal hash table
+                    yield value_list[pos] 
 
         else:
-            for pos in range(self.table_size):
-                if self.array[pos] is not None and self.array[pos][0] == key:
+            for pos in range(self.table_size): # O(N) where N is self.table_size
+                if self.array[pos] is not None and self.array[pos][0] == key: # O(comp(K))
                     sub_table: LinearProbeTable = self.array[pos][1]
                     # Yield the values one by one
-                    for sub_pos in range(sub_table.table_size):
+                    for sub_pos in range(sub_table.table_size): # O(M) where M is the table size of the internal hash table
                         if sub_table[sub_pos] is not None:
                             yield sub_table[sub_pos][1]
 
@@ -193,12 +221,17 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         key = None: returns all top-level keys in the table.
         key = x: returns all bottom-level keys for top-level key x.
+        :complexity best: O(N) when key is None
+        :complexity worst: O(N * M) when key is not None
+            Where N is the table size of the top-level table
+            Where M is the table size of the internal hash table
         """
+        res = []
+
         # If key = None, return all top-level keys in the hash table
         if key is None:
-            res = []
             # Traverse each item in the top-level table and append all the keys to res
-            for pos in range(self.table_size):
+            for pos in range(self.table_size): # O(N) where N is self.table_size
                 if self.array[pos] is not None:
                     res.append(self.array[pos][0])
             return res
@@ -206,37 +239,44 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         # If key != None, return all low-level keys in the sub-table of top-level key
         else:
             # Iterate through the top level table
-            for pos in range(self.table_size):
+            for pos in range(self.table_size): # O(N) where N is self.table_size
                 if self.array[pos] is not None and self.array[pos][0] == key:
                     # Get the sub table and return its values
                     sub_table: LinearProbeTable = self.array[pos][1]
-                    return sub_table.keys()
+                    return sub_table.keys() # O(M) where M is the table size of the internal hash table
+            return res
 
     def values(self, key: K1 | None = None) -> list[V]:
         """
         key = None: returns all values in the table.
         key = x: returns all values for top-level key x.
+        
+        :complexity best: O(N * [M + comp(K)]) when key is not None
+        :complexity worst: O(N * [M + E]) when key is None
+            Where N is the table size of the top-level table
+            Where M is the table size of the internal hash table
+            Where E is the complexity of extend() method 
         """
+        res = []
+
         # If key = None, return all values in all entries in the entire double key hash table (including both the top level and bottom levels)
         if key is None:
-            res = []
-            for pos in range(self.table_size):
+            for pos in range(self.table_size): # O(N) where N is self.table_size
                 if self.array[pos] is not None:
                     sub_table: LinearProbeTable = self.array[pos][1]
                     # Get all values in the internal hash table
-                    value_list = sub_table.values()
-                    for i in range(len(value_list)):
-                        res.append(value_list[i])
+                    res.extend(sub_table.values()) # O(M + E) where M is the table size of the internal hash table
             return res
 
         # If key != None, restrict to all values in the sub-table of top-level key
         else:
             # Iterate through the top level table
-            for pos in range(self.table_size):
-                if self.array[pos] is not None and self.array[pos][0] == key:
+            for pos in range(self.table_size): # O(N) where N is self.table_size
+                if self.array[pos] is not None and self.array[pos][0] == key: # O(comp(K))
                     # Get the sub table and return its values
                     sub_table: LinearProbeTable = self.array[pos][1]
-                    return sub_table.values()
+                    return sub_table.values() # O(M) where M is the table size of the internal hash table
+            return res
 
     def __contains__(self, key: tuple[K1, K2]) -> bool:
         """
@@ -282,40 +322,46 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         Deletes a (key, value) pair in our hash table.
 
+        :complexity best: O(L) when the spot after probing one position downwards is empty after deleting a (key, value) pair from the top level table.
+            Where L is the complexity of _linear_probe
+
+        :complexity worst: See LinearProbeTable.__delitem__, this is only when key2 is not the only element in the internal table if key1
+
         :raises KeyError: when the key doesn't exist.
         """
         # Get the position of the key in the top-level table
-        position = self._linear_probe(key[0], None, False)
+        position = self._linear_probe(key[0], None, False) # O(_linear_probe)
 
         # Get the internal hash table from the position
         sub_table = self.array[position][1]
 
-        # Check if the key1, key2 pair was the only key1 element in the table
+        # Check if key2 is the only element in the internal table of key1
         if len(sub_table) == 1:
             # Remove the element and clear out the entirely of that internal table
             self.array[position] = None
             self.count -= 1
             # Start moving over the cluster
             position = (position + 1) % self.table_size
-            while self.array[position] is not None:
+            while self.array[position] is not None: # O(N)
                 key2, value = self.array[position]
                 self.array[position] = None
                 # Reinsert
-                newpos = self._linear_probe(key2, None, True)
+                newpos = self._linear_probe(key2, None, True) # O(_linear_probe)
                 self.array[newpos] = (key2, value)
                 position = (position + 1) % self.table_size
 
         # Otherwise, delete the (key, value) pair in the internal hash table
         else:
-            del sub_table[key[1]] 
+            del sub_table[key[1]] # See LinearProbeTable.__delitem__
 
     def _rehash(self) -> None:
         """
         Need to resize table and reinsert all values
 
-        :complexity best: O(N*hash(K)) No probing.
-        :complexity worst: O(N*hash(K) + N^2*comp(K)) Lots of probing.
-        Where N is len(self)
+        :complexity: O(A + N*hash1(K)) for best/worst case
+            Where A is the complexity of initialising ArrayR with size self.TABLE_SIZES[self.size_index]
+            Where N is len(self)
+            Where K is key1
         """
         old_array = self.array
         self.size_index += 1
@@ -348,35 +394,29 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         Not required but may be a good testing tool.
         """
-        res = ""
-        for i, item in enumerate(self.array):
-            if item is None:
-                res += f"{i}: None\n"
-            else:
-                res += f"{i}: {item}\n"
-        return res
+        pass
     
 if __name__ == "__main__":
-    # Test that these are actually iterators,
-    # and so changing the underlying data structure changes the next value.
-    dt = DoubleKeyTable()
-    dt["May", "Jim"] = 1
-    dt["Kim", "Tim"] = 2
+    class TestingDKT(DoubleKeyTable):
+        def hash1(self, k):
+            return ord(k[0]) % self.table_size
+        def hash2(self, k, sub_table):
+            return ord(k[-1]) % sub_table.table_size
 
-    key_iterator = dt.iter_keys()
-    value_iterator = dt.iter_values()
+    dt = TestingDKT(sizes=[3, 5], internal_sizes=[3, 5])
 
-    key = next(key_iterator)
-    print(key) # Either one of ["May", "Kim"]
-    value = next(value_iterator) # <data_structures.hash_table.LinearProbeTable object at 0x00000297AEA88A40> not found in [1, 2]
-    print(value) # Either one of [1, 2]
+    dt["Tim", "Bob"] = 1
+    # No resizing yet.
+    print(dt.table_size) # 3
+    print(dt._linear_probe("Tim", "Bob", False)) #(0, 2)
+    dt["Tim", "Jen"] = 2
 
-    del dt["May", "Jim"]
-    del dt["Kim", "Tim"]
+    # Internal resize.
+    print(dt.table_size) # 3
+    print(dt._linear_probe("Tim", "Bob", False)) #(0, 3)
 
-    # Retrieving the next value should either raise StopIteration or crash entirely.
-    # Note: Deleting from an element being iterated over is bad practice
-    # We just want to make sure you aren't returning a list and are doing this
-    # with an iterator.
-    next(key_iterator) # Should raise BaseException
-    next(value_iterator) # Should raise BaseException
+    # External resize
+    dt["Pip", "Bob"] = 4
+    print(dt.table_size) # 5
+    print(dt._linear_probe("Tim", "Bob", False)) #(4, 3)
+    print(dt._linear_probe("Pip", "Bob", False)) #(0, 2)
