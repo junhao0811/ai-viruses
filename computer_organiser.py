@@ -7,6 +7,11 @@ from computer import Computer
 class ComputerOrganiser:
 
     def __init__(self) -> None:
+        """
+        Initialises the Computer Organiser.
+
+        Complexity: O(1) for best/worst case for initialising the computer organiser.
+        """
         self.organiser = []
 
     def cur_position(self, computer: Computer) -> int:
@@ -14,7 +19,9 @@ class ComputerOrganiser:
         Finds the rank of the provided computer given all computers included so far.
         Raises KeyError if this computer hasn't been added
 
-        Complexity: O(log(N)) where N is the total number of computers included so far.
+        Complexity:
+            Best case: O(1) when the computer is found in the middle position in the organiser.
+            Worst case: O(log(N)) where N is the total number of computers included so far.
         """
         rank = binary_search(self.organiser, computer)
 
@@ -27,7 +34,7 @@ class ComputerOrganiser:
         """
         Adds a list of computers to the organiser.
 
-        Complexity: O(M log(M) + N) where
+        Complexity: O(M log(M) + N) for best/worst case where
             M is the length of the input list, and
             N is the total number of computers included so far.
         """

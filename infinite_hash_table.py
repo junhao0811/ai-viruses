@@ -26,8 +26,6 @@ class InfiniteHashTable(Generic[K, V]):
     def __init__(self, level: int = 0) -> None:
         """
         Initialise the Infinite Hash Table.
-
-        :complexity: O(N) for best/worst case when initialising the array where N is self.TABLE_SIZE
         """
         self.array: ArrayR[tuple[K, V] | None] = ArrayR(self.TABLE_SIZE)
         self.count = 0
@@ -59,7 +57,7 @@ class InfiniteHashTable(Generic[K, V]):
         :raises KeyError: when the key doesn't exist.
 
         :complexity best: O(1) when the key already exists at the top table.
-        :complexity worst: O(N) when the key exists at the last level hash table, where N the depth of infinite hash table.
+        :complexity worst: O(L) when the key exists at the last level hash table, where L is the length of the longest word based on the key.
         """
         # Hash the key to get the position
         pos = current_table.hash(key)
@@ -95,10 +93,9 @@ class InfiniteHashTable(Generic[K, V]):
         Auxiliary method to set a (key, value) pair in our hash table.
 
         :complexity best: O(1) when the position in the top table is empty or the key already exists in the position in the top table.
-        :complexity worst: O(N * [S + I]) when the position we want to insert the (key, value) pair is at the last level hash table and whilst continuously creating a new hash table where
-                N is the maximum depth of the hash table
-                S is the complexity of the slice operation when slicing the key
-                I is the complexity of initialising the InfiniteHashTable
+        :complexity worst: O(L * S) when the position we want to insert the (key, value) pair is at the last level hash table and whilst continuously creating a new hash table
+                Where L is the length of the longest word based on the key
+                Where S is the complexity of the slice operation when slicing the key
         """
         # Hash the key to get the position
         pos = current_table.hash(key)
@@ -115,21 +112,21 @@ class InfiniteHashTable(Generic[K, V]):
         # Update the previous (key, value) into new position
         if not isinstance(prev_value, InfiniteHashTable):
             # Base case: the key already exists in that position
-            if current_table.array[pos][0] == key:  # O(comp)
+            if current_table.array[pos][0] == key:
                 current_table.array[pos] = (key, value)
                 current_table.count -= 1
                 repeat_element.push(True)
                 return
 
             # Create a new hash table to store previous (key, value) pair
-            current_table.array[pos] = (prev_key[:current_table.level + 1], InfiniteHashTable(current_table.level))  # O(k) where k is the size of key + O(I)
+            current_table.array[pos] = (prev_key[:current_table.level + 1], InfiniteHashTable(current_table.level))
 
             # Update the current table to the infinite hash table created
             current_table = current_table.array[pos][1]
             current_table.level += 1
 
             # Reinsert the previous key and value
-            current_table[prev_key] = prev_value  # O(setitem)
+            current_table[prev_key] = prev_value
             current_table.count += 1
 
         else:
@@ -152,11 +149,10 @@ class InfiniteHashTable(Generic[K, V]):
         :raises KeyError: when the key doesn't exist.
         
         :complexity best: O(1) when the item targeted for deletion appears at the top table
-        :complexity worst: O(N + M) when the item targeted for deletion is the only item located at the last level hash table
-            N is the maximum depth of the target key
-            M is the complexity of self.collapse_table()
+        :complexity worst: O(L + M) when the item targeted for deletion is the only item located at the last level hash table
+            Where L is the length of the longest word based on the key
+            Where M is the complexity of self.collapse_table()
         """
-
         # Initialise a pointer to the top table
         current_table = self
         # Create a linked stack to store the pointers to the hash tables
@@ -197,9 +193,13 @@ class InfiniteHashTable(Generic[K, V]):
         Collapse the hash table to a single entry in the parent table
         until there is a table with multiple pairs or it reaches the top table if there is
         only a single pair within the current table.
+
         :complexity best: O(1) when the current table has more than one (key, value) pair or it is the top table
-        :complexity worst: O(N * self.TABLE_SIZE) when there is only one element in each level, and it needs to recursively call the method until the base case where it reaches the top level, where
-            N is the maximum depth of the hash table
+        :complexity worst: O(L * self.TABLE_SIZE) when there is only one element in each level,
+                           and it needs to recursively call the method L times to reinsert the only existing (key, value) pair
+                           from the current table to the parent table until it reaches the top table, which is the base case.
+        
+            Where L is the length of the longest word based on the key
         """
         # Base case - if the length of the current table is greater than 1
         if len(current_table) > 1 or current_table.level == 0:
@@ -233,6 +233,8 @@ class InfiniteHashTable(Generic[K, V]):
     def __len__(self) -> int:
         """
         Returns the number of (key, value) pairs in the hash table.
+
+        :complexity: O(1) for best/worst case when returning the number of (key, value) pairs in the hash table.
         """
         return self.count
 
@@ -260,7 +262,7 @@ class InfiniteHashTable(Generic[K, V]):
 
         :raises KeyError: when the key doesn't exist.
         :complexity best: O(1) when the item targeted for deletion appears at the top table
-        :complexity worst: O(N) when the key exists at the last level hash table, where N is the maximum depth of the infinite hash table
+        :complexity worst: O(L) when the key exists at the last level hash table, where L is the length of the longest word based on the key
         """
         # Hash the key to get the position
         pos = current_table.hash(key)
@@ -308,11 +310,10 @@ class InfiniteHashTable(Generic[K, V]):
         """
         Auxiliary method for sort_keys
 
-        :complexity best: O(self.TABLE_SIZE) when there are no inner infinite hash table and all the (key, value) pairs are stored in the top table
-        :complexity worst: O(N * A * L) when there are infinite hash tables in the table and the keys are stored in the last level hash table
-            N is the number of words inserted
-            A is the size of the alphabet (26)
-            L is the length of the longest word
+        :complexity: O(N * A * L) for best/worst case when there are infinite hash tables in the table and the keys are stored in the last level hash table
+            Where N is the number of words inserted
+            Where A is the size of the alphabet (26)
+            Where L is the length of the longest word
         """
         if current_table is None:
             current_table = self

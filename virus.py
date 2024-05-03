@@ -9,8 +9,6 @@ from data_structures.linked_stack import LinkedStack
 class VirusType(ABC):
     """
     A VirusType is a type of virus that can be transmitted through a computer network.
-
-    Unless stated otherwise, all methods have O(1) complexity.
     """
 
     def __init__(self) -> None:
@@ -132,6 +130,10 @@ class RiskAverseVirus(VirusType):
 
         Returns:
             BranchDecision: A BranchDecision enum value
+
+        Complexity: O(1) for best/worst case.
+            The method involves comparison operators ('>', '<', '==') and mathematical operations such as integer division ('//'), which will take constant time operations.
+            It does not depends on the size of the input which results in constant time.
         """
         top_route = type(top_branch.store) == RouteSeries
         bot_route = type(bottom_branch.store) == RouteSeries
