@@ -6,14 +6,16 @@ from double_key_table import DoubleKeyTable
 
 class ComputerManager:
     """
-    Computer Manager.
+    A class to manage a collection of computers.
 
-    Unless stated otherwise, all methods have O(1) complexity.
+    Assume that all Double Key Table and all Infinite Hash Table methods are O(1), even if they obviously are not.
     """
 
     def __init__(self) -> None:
         """
         Initialise the Computer Manager.
+
+        :complexity: O(1) for best/worst case for initialising the Computer Manager.
         """
         self.manager = DoubleKeyTable()
 
@@ -23,6 +25,8 @@ class ComputerManager:
 
         :param computer: The computer to be added to the manager
         :type computer: Computer
+
+        :complexity: O(1) for best/worst case when addding a computer to the computer manager
         """
         self.manager[(str(computer.get_hacking_difficulty()), computer.get_name())] = computer
 
@@ -32,6 +36,8 @@ class ComputerManager:
 
         :param computer: The computer to be removed from the manager
         :type computer: Computer
+
+        :complexity: O(1) for best/worst case when removing a computer from the computer manager
         """
         del self.manager[(str(computer.get_hacking_difficulty()), computer.get_name())]
 
@@ -43,6 +49,8 @@ class ComputerManager:
         :type old: Computer
         :param new: The computer to be added to the manager
         :type new: Computer
+
+        :complexity: O(1) for best/worst case when removing the old computer from the computer manager and adding the new computer to the computer manager
         """
         self.remove_computer(old)
         self.add_computer(new)
@@ -55,8 +63,13 @@ class ComputerManager:
         :type diff: int
         :return: A list of computers with the given hacking difficulty
         :rtype: list[Computer]
+
+        :complexity: O(1) for best/worst case when retrieving all computers with the given hacking difficulty
         """
-        return self.manager.values(str(diff))
+        try:
+            return self.manager.values(str(diff))
+        except KeyError:
+            return []
 
     def group_by_difficulty(self) -> list[list[Computer]]:
         """
@@ -66,7 +79,7 @@ class ComputerManager:
         :rtype: list[list[Computer]]
 
         :complexity: O(N log (N) + M) for best/worst case where
-            N is the number of computers in the hash table
+            N is the number of computers in the DoubleKeyTable
             M is the number of unique hacking difficulties
         """
         res = []
@@ -78,7 +91,10 @@ class ComputerManager:
         # Iterate through the sorted list of hacking difficulties
         for diff in diff_lst:
             # Retrieve all the computer with the hacking difficulty and append it to res
-            res.append(self.manager.values(str(diff)))
+            try:
+                res.append(self.manager.values(str(diff)))
+            except KeyError:
+                res.append([])
 
         return res
     
