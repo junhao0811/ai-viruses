@@ -58,9 +58,8 @@ class InfiniteHashTable(Generic[K, V]):
 
         :raises KeyError: when the key doesn't exist.
 
-        :complexity:
-            :best case: O(1) when the key already exists at the top table.
-            :worst case: O(N) when the key exists at the last level hash table, where N the depth of infinite hash table.
+        :complexity best: O(1) when the key already exists at the top table.
+        :complexity worst: O(N) when the key exists at the last level hash table, where N the depth of infinite hash table.
         """
         # Hash the key to get the position
         pos = current_table.hash(key)
@@ -95,9 +94,8 @@ class InfiniteHashTable(Generic[K, V]):
         """
         Auxiliary method to set a (key, value) pair in our hash table.
 
-        :complexity:
-            :best case: O(1) when the position in the top table is empty or the key already exists in the position in the top table.
-            :worst case: O(N * [S + I]) when the position we want to insert the (key, value) pair is at the last level hash table and whilst continuously creating a new hash table where
+        :complexity best: O(1) when the position in the top table is empty or the key already exists in the position in the top table.
+        :complexity worst: O(N * [S + I]) when the position we want to insert the (key, value) pair is at the last level hash table and whilst continuously creating a new hash table where
                 N is the maximum depth of the hash table
                 S is the complexity of the slice operation when slicing the key
                 I is the complexity of initialising the InfiniteHashTable
@@ -153,11 +151,10 @@ class InfiniteHashTable(Generic[K, V]):
 
         :raises KeyError: when the key doesn't exist.
         
-        :complexity:
-            :best case: O(1) when the item targeted for deletion appears at the top table
-            :worst case: O(N + M) when the item targeted for deletion is the only item located at the last level hash table
-                N is the maximum depth of the target key
-                M is the complexity of self.collapse_table()
+        :complexity best: O(1) when the item targeted for deletion appears at the top table
+        :complexity worst: O(N + M) when the item targeted for deletion is the only item located at the last level hash table
+            N is the maximum depth of the target key
+            M is the complexity of self.collapse_table()
         """
 
         # Initialise a pointer to the top table
@@ -200,10 +197,9 @@ class InfiniteHashTable(Generic[K, V]):
         Collapse the hash table to a single entry in the parent table
         until there is a table with multiple pairs or it reaches the top table if there is
         only a single pair within the current table.
-        :complexity:
-            :best: O(1) when the current table has more than one (key, value) pair or it is the top table
-            :worst: O(N * self.TABLE_SIZE) when there is only one element in each level, and it needs to recursively call the method until the base case where it reaches the top level, where
-                N is the maximum depth of the hash table
+        :complexity best: O(1) when the current table has more than one (key, value) pair or it is the top table
+        :complexity worst: O(N * self.TABLE_SIZE) when there is only one element in each level, and it needs to recursively call the method until the base case where it reaches the top level, where
+            N is the maximum depth of the hash table
         """
         # Base case - if the length of the current table is greater than 1
         if len(current_table) > 1 or current_table.level == 0:
@@ -263,9 +259,8 @@ class InfiniteHashTable(Generic[K, V]):
         Auxiliary method to get the sequence of positions required to access this key.
 
         :raises KeyError: when the key doesn't exist.
-        :complexity:
-            :best: O(1) when the item targeted for deletion appears at the top table
-            :worst: O(N) when the key exists at the last level hash table, where N is the maximum depth of the infinite hash table
+        :complexity best: O(1) when the item targeted for deletion appears at the top table
+        :complexity worst: O(N) when the key exists at the last level hash table, where N is the maximum depth of the infinite hash table
         """
         # Hash the key to get the position
         pos = current_table.hash(key)
@@ -313,12 +308,11 @@ class InfiniteHashTable(Generic[K, V]):
         """
         Auxiliary method for sort_keys
 
-        :complexity:
-            :best case: O(self.TABLE_SIZE) when there are no inner infinite hash table and all the (key, value) pairs are stored in the top table
-            :worst case: O(N * A * L) when there are infinite hash tables in the table and the keys are stored in the last level hash table
-                N is the number of words inserted
-                A is the size of the alphabet (26)
-                L is the length of the longest word
+        :complexity best: O(self.TABLE_SIZE) when there are no inner infinite hash table and all the (key, value) pairs are stored in the top table
+        :complexity worst: O(N * A * L) when there are infinite hash tables in the table and the keys are stored in the last level hash table
+            N is the number of words inserted
+            A is the size of the alphabet (26)
+            L is the length of the longest word
         """
         if current_table is None:
             current_table = self

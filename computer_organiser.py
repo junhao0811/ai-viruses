@@ -16,10 +16,12 @@ class ComputerOrganiser:
 
         Complexity: O(log(N)) where N is the total number of computers included so far.
         """
-        if computer not in self.organiser: # O(N) ???
-            raise KeyError(f"Computer {computer} not found in the organiser")
-        
-        return binary_search(self.organiser, computer)
+        rank = binary_search(self.organiser, computer)
+
+        if rank >= len(self.organiser) or self.organiser[rank] != computer:
+            raise KeyError(f"{computer} hasn't been added to the organiser")
+        else:
+            return rank
 
     def add_computers(self, computers: list[Computer]) -> None:
         """
