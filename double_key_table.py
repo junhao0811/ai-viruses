@@ -91,12 +91,11 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             If key2 != None, a tuple containing the Index to access the item in the top-level table and the Index to access the item in the bottom-level table.
         :rtype: tuple[int, int] | int
 
-        :complexity:
-            :best case: O(hash1(key1) + I) when key2 is None and the first position is empty
-            :worst case: O([hash1(key1) + M*comp(key1) + I] + [hash2(key2) + N*comp(key2)]) when we've searched the entire table where N is the tablesize when key2 is not None
-                I is the complexity of initialising the DoubleKeyTable.
-                M is self.table_size
-                N is the table size of the internal hash table.
+        :complexity best:  O(hash1(key1) + I) when key2 is None and the first position is empty
+        :complexity worst: O([hash1(key1) + M*comp(key1) + I] + [hash2(key2) + N*comp(key2)]) when we've searched the entire table where N is the tablesize when key2 is not None
+            I is the complexity of initialising the DoubleKeyTable.
+            M is self.table_size
+            N is the table size of the internal hash table.
         """
         # Check whether key1 is passed in as an argument
         if key1 is None:
@@ -408,15 +407,15 @@ if __name__ == "__main__":
     dt["Tim", "Bob"] = 1
     # No resizing yet.
     print(dt.table_size) # 3
-    print(dt._linear_probe("Tim", "Bob", False)) #(0, 2)
+    print(dt._linear_probe("Tim", "Bob", False)) # (0, 2)
     dt["Tim", "Jen"] = 2
 
     # Internal resize.
     print(dt.table_size) # 3
-    print(dt._linear_probe("Tim", "Bob", False)) #(0, 3)
+    print(dt._linear_probe("Tim", "Bob", False)) # (0, 3)
 
     # External resize
     dt["Pip", "Bob"] = 4
     print(dt.table_size) # 5
-    print(dt._linear_probe("Tim", "Bob", False)) #(4, 3)
-    print(dt._linear_probe("Pip", "Bob", False)) #(0, 2)
+    print(dt._linear_probe("Tim", "Bob", False)) # (4, 3)
+    print(dt._linear_probe("Pip", "Bob", False)) # (0, 2)
